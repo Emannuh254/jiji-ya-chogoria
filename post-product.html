@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jiji ya Chogoria - Dashboard</title>
+    <title>Jiji ya Chogoria - Post Product</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
     <link rel="stylesheet" href="index.css">
 </head>
@@ -11,13 +11,14 @@
             <nav class="navbar">
                 <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
                 <ul class="nav-links">
-                    <li><a href="dashboard.html" class="dashboard active">Dashboard</a></li>
+                    <li><a href="dashboard.html" class="dashboard">Dashboard</a></li>
                     <li><a href="chat.html" class="chat">Chat</a></li>
                     <li><a href="post-product.html" class="post product">Post product 🛒</a></li>
                     <li><a href="settings.html" class="settings">Settings</a></li>
                     <li><a href="#" class="logout" id="logout-btn">Logout</a></li>
+                    
                 </ul>
-                <a href="post-product.html" class="post-product-btn">Post Product</a>
+                <a href="post-product.html" class="post-product-btn active">Post Product</a>
                 <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
             </nav>
         </div>
@@ -28,9 +29,24 @@
             <span id="user-name"></span>
         </div>
         
-        <div id="products-container">
-            <h2>Available Products</h2>
-            <div id="products-list"></div>
+        <div id="product-section">
+            <h2>Post a New Product</h2>
+            <form id="product-form">
+                <input type="text" id="product-title" placeholder="Product Title" required>
+                <textarea id="product-description" placeholder="Product Description" required></textarea>
+                <input type="number" id="product-price" placeholder="Price (KES)" required>
+                <select id="product-status">
+                    <option value="in_stock">In Stock</option>
+                    <option value="sold">Sold</option>
+                    <option value="reserved">Reserved</option>
+                </select>
+                <div class="image-upload-container">
+                    <label for="product-image">Product Image</label>
+                    <input type="file" id="product-image" accept="image/*">
+                    <div id="image-preview"></div>
+                </div>
+                <button type="submit">Post Product</button>
+            </form>
         </div>
     </main>
 
@@ -108,75 +124,81 @@
             return user;
         }
 
-        // Load products
-        async function loadProducts() {
+        // Image preview functionality
+        const productImage = document.getElementById('product-image');
+        const imagePreview = document.getElementById('image-preview');
+
+        productImage.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.innerHTML = '';
+            }
+        });
+
+        // Post a new product
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            const title = document.getElementById('product-title').value;
+            const description = document.getElementById('product-description').value;
+            const price = document.getElementById('product-price').value;
+            const status = document.getElementById('product-status').value;
+            const imageFile = document.getElementById('product-image').files[0];
+            
+            let imageUrl = null;
+            
+            // Upload image if provided
+            if (imageFile) {
+                const fileName = `${user.id}/${Date.now()}_${imageFile.name}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+                
+                if (uploadError) {
+                    showToast('Error uploading image: ' + uploadError.message, 'error');
+                    return;
+                }
+                
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(fileName);
+                
+                imageUrl = urlData.publicUrl;
+            }
+            
+            // Create product record
             const { data, error } = await supabase
                 .from('products')
-                .select(`
-                    *,
-                    profiles(full_name, phone)
-                `)
-                .order('created_at', { ascending: false });
+                .insert([{
+                    title,
+                    description,
+                    price,
+                    status,
+                    image_url: imageUrl,
+                    user_id: user.id
+                }]);
             
             if (error) {
-                console.error('Error loading products:', error);
-                return;
+                showToast('Error posting product: ' + error.message, 'error');
+            } else {
+                showToast('🎉 Product posted successfully!');
+                document.getElementById('product-form').reset();
+                imagePreview.innerHTML = '';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
             }
-            
-            const productsList = document.getElementById('products-list');
-            productsList.innerHTML = '';
-            
-            if (data.length === 0) {
-                productsList.innerHTML = '<p>No products available yet.</p>';
-                return;
-            }
-            
-            data.forEach(product => {
-                const statusClass = product.status === 'in_stock' ? 'in-stock' : 
-                                   product.status === 'sold' ? 'sold' : 'reserved';
-                
-                const productEl = document.createElement('div');
-                productEl.className = 'product-card';
-                
-                // Add image if available
-                const imageHtml = product.image_url 
-                    ? `<div class="product-image"><img src="${product.image_url}" alt="${product.title}"></div>`
-                    : `<div class="product-image placeholder">📷 No Image</div>`;
-                
-                productEl.innerHTML = `
-                    ${imageHtml}
-                    <div class="product-details">
-                        <h3>${product.title}</h3>
-                        <p>${product.description}</p>
-                        <p><strong>Price:</strong> KES ${product.price}</p>
-                        <p><strong>Status:</strong> <span class="status-indicator ${statusClass}">${product.status.replace('_', ' ').toUpperCase()}</span></p>
-                        <p><strong>Seller:</strong> ${product.profiles?.full_name || 'Unknown'}</p>
-                        <p><strong>Posted:</strong> ${new Date(product.created_at).toLocaleString()}</p>
-                        <button class="chat-seller-btn" data-seller-id="${product.user_id}" data-seller-name="${product.profiles?.full_name || 'Seller'}" data-product-title="${product.title}">
-                            Chat with Seller
-                        </button>
-                    </div>
-                `;
-                productsList.appendChild(productEl);
-            });
-            
-            // Add event listeners to chat buttons
-            document.querySelectorAll('.chat-seller-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const sellerId = this.getAttribute('data-seller-id');
-                    const sellerName = this.getAttribute('data-seller-name');
-                    const productTitle = this.getAttribute('data-product-title');
-                    
-                    // Store seller info in sessionStorage
-                    sessionStorage.setItem('chatSellerId', sellerId);
-                    sessionStorage.setItem('chatSellerName', sellerName);
-                    sessionStorage.setItem('chatProductTitle', productTitle);
-                    
-                    // Navigate to chat page
-                    window.location.href = 'chat.html';
-                });
-            });
-        }
+        });
 
         // Logout
         document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -188,17 +210,7 @@
         });
 
         // Initialize
-        checkAuth().then(() => {
-            loadProducts();
-            
-            // Real-time subscription for product updates
-            supabase
-                .channel('products')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
-                    loadProducts();
-                })
-                .subscribe();
-        });
+        checkAuth();
     </script>
 </body>
 </html>

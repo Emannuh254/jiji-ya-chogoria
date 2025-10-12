@@ -17,8 +17,8 @@
             <div id="login-section">
                 <h2>Login</h2>
                 <form id="login-form">
-                    <input type="email" id="login-email" placeholder="Email" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
+                    <input type="email" id="login-email" placeholder="📧 Email" required>
+                    <input type="password" id="login-password" placeholder="🔒 Password" required>
                     <button type="submit">Login</button>
                 </form>
                 <div class="form-toggle">
@@ -29,9 +29,9 @@
             <div id="signup-section" class="hidden">
                 <h2>Signup</h2>
                 <form id="signup-form">
-                    <input type="text" id="signup-name" placeholder="Full Name" required>
-                    <input type="email" id="signup-email" placeholder="Email" required>
-                    <input type="password" id="signup-password" placeholder="Password" required>
+                    <input type="text" id="signup-name" placeholder="👤 Full Name" required>
+                    <input type="email" id="signup-email" placeholder="📧 Email" required>
+                    <input type="password" id="signup-password" placeholder="🔒 Password" required>
                     <button type="submit">Signup</button>
                 </form>
                 <div class="form-toggle">
@@ -112,13 +112,13 @@
                 if (error) {
                     showToast(error.message, 'error');
                 } else {
-                    showToast('Login successful!');
+                    showToast('🎉 Login successful! Redirecting...');
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
-                    }, 1000);
+                    }, 1500);
                 }
             } catch (error) {
-                showToast('Login failed: ' + error.message, 'error');
+                showToast('❌ Login failed: ' + error.message, 'error');
             }
         });
 
@@ -142,13 +142,13 @@
                 if (error) {
                     showToast(error.message, 'error');
                 } else {
-                    showToast('Account created! Please check your email to confirm your account.');
+                    showToast('📧 Account created! Please check your email to confirm.');
                     document.getElementById('signup-form').reset();
                     signupSection.classList.add('hidden');
                     loginSection.classList.remove('hidden');
                 }
             } catch (error) {
-                showToast('Signup failed: ' + error.message, 'error');
+                showToast('❌ Signup failed: ' + error.message, 'error');
             }
         });
 

@@ -8,15 +8,24 @@
 <body>
     <header>
         <div class="container">
-            <h1>Jiji ya Chogoria</h1>
+            <nav class="navbar">
+                <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
+                <ul class="nav-links">
+                    <li><a href="dashboard.html" class="dashboard">Dashboard</a></li>
+                    <li><a href="chat.html" class="chat">Chat</a></li>
+                    <li><a href="post-product.html" class="post product">Post product 🛒</a></li>
+                    <li><a href="settings.html" class="settings active">Settings</a></li>
+                    <li><a href="#" class="logout" id="logout-btn">Logout</a></li>
+                </ul>
+                <a href="post-product.html" class="post-product-btn">Post Product</a>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+            </nav>
         </div>
     </header>
     
     <main class="container">
         <div id="user-info">
             <span id="user-name"></span>
-            <button id="dashboard-btn">Back to Dashboard</button>
-            <button id="logout-btn">Logout</button>
         </div>
         
         <div id="settings-container">
@@ -56,6 +65,21 @@
         const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -121,7 +145,7 @@
             } else {
                 document.getElementById('phone-status').textContent = 'Phone number saved successfully';
                 document.getElementById('phone-status').style.color = 'var(--success)';
-                showToast('Phone number updated successfully');
+                showToast('📱 Phone number updated successfully');
             }
         });
 
@@ -156,7 +180,7 @@
                     if (error) {
                         showToast('Error deleting account: ' + error.message, 'error');
                     } else {
-                        showToast('Your account has been deleted successfully.');
+                        showToast('🗑️ Your account has been deleted successfully.');
                         setTimeout(() => {
                             window.location.href = 'index.html';
                         }, 2000);
@@ -170,15 +194,10 @@
         // Logout
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await supabase.auth.signOut();
-            showToast('Logged out successfully');
+            showToast('👋 Logged out successfully');
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1000);
-        });
-
-        // Navigate to dashboard
-        document.getElementById('dashboard-btn').addEventListener('click', () => {
-            window.location.href = 'dashboard.html';
         });
 
         // Initialize

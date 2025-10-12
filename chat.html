@@ -1,1600 +1,797 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Jiji ya Chogoria - Chat</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💬 Chat | Jiji ya Chogoria</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+<style>
+  /* ====== RESET & BASE ====== */
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+  body { background:#000; color:#fff; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; }
+
+  /* ====== CHAT CONTAINER ====== */
+  .chat-container { display:flex; flex-direction:row; width:100%; max-width:1024px; min-height:100vh; background:#000; }
+
+  /* ====== SIDEBAR ====== */
+  .sidebar { width:300px; background:#111; border-right:1px solid #222; overflow-y:auto; transition:transform 0.3s ease; }
+  .sidebar.hidden { transform:translateX(-100%); }
+  .tab-btns { display:flex; border-bottom:1px solid #222; }
+  .tab-btn { flex:1; padding:12px; text-align:center; cursor:pointer; color:#fff; transition:all 0.3s; }
+  .tab-btn.active { background:#ff6600; color:#000; font-weight:bold; }
+  .search-container { padding:10px; }
+  .search-input { width:100%; padding:10px; border-radius:20px; border:none; background:#222; color:#fff; outline:none; }
+  .conversations-container { padding:10px; }
+  .conversation { display:flex; align-items:center; padding:8px; cursor:pointer; border-radius:10px; transition:background 0.2s; margin-bottom:5px; }
+  .conversation:hover { background:#222; }
+  .conversation-avatar { width:40px; height:40px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px; position:relative; }
+  .conversation-avatar.online::after { content:''; position:absolute; bottom:0; right:0; width:10px; height:10px; background:#0f0; border-radius:50%; border:2px solid #000; }
+  .conversation-details { flex:1; display:flex; flex-direction:column; }
+  .conversation-header { display:flex; justify-content:space-between; }
+  .conversation-name { font-weight:bold; font-size:14px; color:#ff6600; }
+  .conversation-preview { font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conversation-time { font-size:12px; color:#888; }
+  .unread-indicator { background:#ff6600; color:#000; font-size:12px; padding:2px 6px; border-radius:10px; margin-left:5px; }
+
+  /* ====== CHAT AREA ====== */
+  .chat-area { flex:1; display:flex; flex-direction:column; background:#000; }
+  .chat-header { display:none; align-items:center; padding:10px; border-bottom:1px solid #222; background:#111; }
+  .back-btn { display:none; background:none; border:none; color:#fff; font-size:20px; cursor:pointer; margin-right:10px; }
+  .chat-user-avatar { width:40px; height:40px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px; position:relative; }
+  .chat-user-avatar.online::after { content:''; position:absolute; bottom:0; right:0; width:10px; height:10px; background:#0f0; border-radius:50%; border:2px solid #000; }
+  .chat-user-info { display:flex; flex-direction:column; }
+  .chat-user-name { font-weight:bold; color:#ff6600; }
+  .chat-user-status { font-size:12px; color:#888; }
+  .messages-container { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .message { max-width:80%; padding:10px; border-radius:15px; position:relative; word-wrap:break-word; }
+  .message.sent { background:#ff6600; color:#000; align-self:flex-end; border-bottom-right-radius:3px; }
+  .message.received { background:#222; color:#fff; align-self:flex-start; border-bottom-left-radius:3px; }
+  .message-bubble { display:flex; flex-direction:column; }
+  .message-header { font-size:12px; color:#888; margin-bottom:4px; display:flex; justify-content:space-between; }
+  .message-content { font-size:14px; }
+  .delete-btn { background:transparent; border:none; color:#ff3300; cursor:pointer; margin-left:5px; font-size:12px; }
+  .message-time { font-size:11px; color:#888; margin-top:3px; text-align:right; }
+
+  /* ====== INPUT AREA ====== */
+  .message-input-container { display:flex; padding:10px; border-top:1px solid #222; background:#111; }
+  .message-form { display:flex; }
+  .message-input { flex:1; padding:10px; border-radius:20px; border:none; background:#222; color:#fff; outline:none; margin-right:10px; }
+  .send-btn { padding:10px 20px; background:#ff6600; border:none; border-radius:20px; color:#000; font-weight:bold; cursor:pointer; transition:all 0.3s; }
+  .send-btn:hover { transform:scale(1.05); box-shadow:0 0 10px #ff6600; }
+
+  /* ====== LOADING & EMPTY ====== */
+  .loading-spinner { text-align:center; padding:20px; color:#ff6600; }
+  .no-messages, .no-conversations, .error-message { text-align:center; color:#888; padding:20px; }
+
+  /* ====== MOBILE ====== */
+  @media (max-width:768px) {
+    .chat-container { flex-direction:column; }
+    .sidebar { width:100%; max-height:250px; overflow-y:auto; }
+    .chat-area { flex:1; }
+    .back-btn { display:block; }
+  }
+
+  /* ====== TOAST ====== */
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#ff6600; color:#000; padding:10px 20px; border-radius:20px; display:flex; gap:6px; align-items:center; font-weight:bold; animation:slideIn 0.3s ease; z-index:999; }
+  .toast.error { background:#ff3300; color:#fff; }
+  .toast.warning { background:#ffaa00; color:#000; }
+  @keyframes slideIn { from{opacity:0; transform:translate(-50%,20px);} to{opacity:1; transform:translate(-50%,0);} }
+  @keyframes slideOut { from{opacity:1;} to{opacity:0;} }
+</style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="dashboard.html" class="logo">Jiji ya Chogoria 🛍️</a>
-                <ul class="nav-links">
-                    <li><a href="dashboard.html" class="dashboard">Dashboard 📊</a></li>
-                    <li><a href="chat.html" class="chat active">Chat 💬</a></li>
-                    <li><a href="post-product.html" class="post-product">Post Product 🛒</a></li>
-                    <li><a href="settings.html" class="settings">Settings ⚙️</a></li>
-                    <li><a href="#" class="logout" id="logout-btn">Logout 🚪</a></li>
-                </ul>
-                <a href="post-product.html" class="post-product-btn">Post Product 🛒</a>
-                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
-            </nav>
-        </div>
-    </header>
+<div class="chat-container">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="tab-btns">
+      <div class="tab-btn active" data-tab="inbox">Inbox</div>
+      <div class="tab-btn" data-tab="community">Community</div>
+    </div>
+    <div class="search-container">
+      <input type="text" class="search-input" placeholder="Search conversations...">
+    </div>
+    <div class="conversations-container" id="conversations-container">
+      <div class="loading-spinner">Loading conversations...</div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div class="chat-area">
+    <div class="chat-header" id="chat-header">
+      <button class="back-btn" id="back-to-inbox">←</button>
+      <div class="chat-user-avatar" id="chat-user-avatar">U</div>
+      <div class="chat-user-info">
+        <div class="chat-user-name" id="chat-user-name">Username</div>
+        <div class="chat-user-status" id="chat-user-status">Offline</div>
+      </div>
+    </div>
+    <div class="messages-container" id="messages-container">
+      <div class="no-messages">Select a conversation to start chatting</div>
+    </div>
+    <div class="message-input-container" id="message-input-container">
+      <form class="message-form" id="message-form">
+        <input type="text" class="message-input" id="message-input" placeholder="Type your message...">
+        <button type="submit" class="send-btn">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize Supabase
+  const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Cache DOM elements
+  const elements = {
+    sidebar: document.getElementById('sidebar'),
+    conversationsContainer: document.getElementById('conversations-container'),
+    messagesContainer: document.getElementById('messages-container'),
+    messageForm: document.getElementById('message-form'),
+    messageInput: document.getElementById('message-input'),
+    messageInputContainer: document.getElementById('message-input-container'),
+    chatHeader: document.getElementById('chat-header'),
+    chatUserAvatar: document.getElementById('chat-user-avatar'),
+    chatUserName: document.getElementById('chat-user-name'),
+    chatUserStatus: document.getElementById('chat-user-status'),
+    backToInboxBtn: document.getElementById('back-to-inbox'),
+    searchInput: document.querySelector('.search-input'),
+    tabBtns: document.querySelectorAll('.tab-btn')
+  };
+
+  // State management
+  let currentUser = null;
+  let activeTab = 'inbox';
+  let activeConversation = null;
+  let onlineUsers = new Set();
+  let isMobile = () => window.innerWidth <= 768;
+
+  // Toggle sidebar on mobile
+  function toggleSidebar() {
+    if (isMobile()) {
+      elements.sidebar.classList.toggle('hidden');
+    }
+  }
+
+  // Toast notification function
+  function showToast(message, type = 'success') {
+    document.querySelectorAll('.toast').forEach(toast => toast.remove());
     
-    <main class="container">
-        <div id="user-info">
-            <span id="user-name"></span>
-        </div>
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+      success: '✅',
+      error: '❌',
+      warning: '⚠️'
+    };
+    
+    toast.innerHTML = `<span>${icons[type] || ''}</span> <span>${message}</span>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.4s ease forwards';
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
+  }
+
+  // Check authentication and ensure profile exists
+  async function checkAuth() {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        showToast('Please log in to access the chat 😕', 'error');
+        window.location.href = 'index.html';
+        return null;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('id', user.id)
+        .single();
         
-        <div id="chat-section">
-            <div class="chat-tabs">
-                <button class="tab-btn" data-tab="community">Community Chat 💬</button>
-                <button class="tab-btn active" data-tab="inbox">Inbox 📩</button>
+      if (!profile) {
+        await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.email
+          }]);
+      }
+      
+      return user;
+    } catch (authError) {
+      console.error('Authentication error:', authError);
+      showToast('Authentication failed. Please log in again.', 'error');
+      window.location.href = 'index.html';
+      return null;
+    }
+  }
+
+  // Load conversations (both inbox and community)
+  async function loadConversations() {
+    try {
+      elements.conversationsContainer.innerHTML = '<div class="loading-spinner">Loading conversations...</div>';
+
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+
+      let query = supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          user_id,
+          recipient_id,
+          created_at,
+          profiles!messages_user_id_fkey(full_name),
+          recipient:profiles!messages_recipient_id_fkey(full_name)
+        `);
+
+      if (activeTab === 'inbox') {
+        query = query
+          .eq('is_private', true)
+          .or(`user_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`);
+      } else {
+        query = query
+          .eq('is_private', false);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      elements.conversationsContainer.innerHTML = '';
+      
+      if (data.length === 0) {
+        const emptyMessage = activeTab === 'inbox' 
+          ? 'No conversations yet. Start a private chat! 📩' 
+          : 'No community messages yet. Start the conversation! 😊';
+        
+        elements.conversationsContainer.innerHTML = `<div class="no-conversations">${emptyMessage}</div>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      
+      if (activeTab === 'inbox') {
+        // Process inbox conversations
+        const conversations = {};
+        
+        data.forEach(message => {
+          const otherUserId = message.user_id === currentUserId ? message.recipient_id : message.user_id;
+          const otherUserName = message.user_id === currentUserId 
+            ? (message.recipient?.full_name || 'Unknown') 
+            : (message.profiles?.full_name || 'Unknown');
+            
+          if (!conversations[otherUserId]) {
+            conversations[otherUserId] = {
+              full_name: otherUserName,
+              lastMessage: message.content,
+              lastTime: message.created_at,
+              unread: message.user_id !== currentUserId && !message.is_read
+            };
+          }
+        });
+        
+        Object.entries(conversations).forEach(([userId, convo]) => {
+          const conversationEl = createConversationElement(userId, convo);
+          fragment.appendChild(conversationEl);
+        });
+      } else {
+        // Process community messages
+        data.forEach(message => {
+          const conversationEl = createCommunityMessageElement(message);
+          fragment.appendChild(conversationEl);
+        });
+      }
+
+      elements.conversationsContainer.appendChild(fragment);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      elements.conversationsContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+      showToast('Error loading conversations 😕', 'error');
+    }
+  }
+
+  // Create conversation element for inbox
+  function createConversationElement(userId, convo) {
+    const conversationEl = document.createElement('div');
+    conversationEl.className = 'conversation';
+    conversationEl.setAttribute('data-user-id', userId);
+    
+    const isOnline = onlineUsers.has(userId);
+    
+    conversationEl.innerHTML = `
+      <div class="conversation-avatar ${isOnline ? 'online' : ''}">
+        ${escapeHtml(convo.full_name.charAt(0).toUpperCase())}
+      </div>
+      <div class="conversation-details">
+        <div class="conversation-header">
+          <div class="conversation-name">${escapeHtml(convo.full_name)}</div>
+          <div class="conversation-time">${formatTime(convo.lastTime)}</div>
+        </div>
+        <div class="conversation-preview">${escapeHtml(convo.lastMessage)}</div>
+      </div>
+      ${convo.unread ? '<div class="unread-indicator">1</div>' : ''}
+    `;
+    
+    conversationEl.addEventListener('click', () => {
+      loadPrivateMessages(userId, convo.full_name);
+    });
+    
+    return conversationEl;
+  }
+
+  // Create conversation element for community
+  function createCommunityMessageElement(message) {
+    const conversationEl = document.createElement('div');
+    conversationEl.className = 'conversation';
+    conversationEl.setAttribute('data-message-id', message.id);
+    
+    const isOnline = onlineUsers.has(message.user_id);
+    
+    conversationEl.innerHTML = `
+      <div class="conversation-avatar ${isOnline ? 'online' : ''}">
+        ${escapeHtml(message.profiles?.full_name?.charAt(0).toUpperCase() || 'U')}
+      </div>
+      <div class="conversation-details">
+        <div class="conversation-header">
+          <div class="conversation-name">${escapeHtml(message.profiles?.full_name || 'Unknown')}</div>
+          <div class="conversation-time">${formatTime(message.created_at)}</div>
+        </div>
+        <div class="conversation-preview">${escapeHtml(message.content)}</div>
+      </div>
+    `;
+    
+    conversationEl.addEventListener('click', () => {
+      loadCommunityChat();
+    });
+    
+    return conversationEl;
+  }
+
+  // Load messages (both private and community)
+  async function loadMessages(recipientId = null, isCommunity = false) {
+    try {
+      elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages...</div>';
+
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+
+      let query = supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          user_id,
+          created_at,
+          profiles!messages_user_id_fkey(full_name)
+        `);
+
+      if (isCommunity) {
+        query = query.eq('is_private', false);
+      } else {
+        query = query
+          .eq('is_private', true)
+          .or(`and(user_id.eq.${currentUserId},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUserId})`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      elements.messagesContainer.innerHTML = '';
+
+      if (data.length === 0) {
+        elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start the conversation! 😊</div>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      
+      data.forEach(message => {
+        const isCurrentUser = message.user_id === currentUserId;
+        const messageEl = document.createElement('div');
+        messageEl.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+        
+        const deleteButton = isCurrentUser
+          ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
+          : '';
+
+        if (isCommunity) {
+          messageEl.innerHTML = `
+            <div class="message-bubble">
+              <div class="message-header">
+                <span class="message-sender">${escapeHtml(message.profiles?.full_name || 'Unknown')}</span>
+                <span class="message-time">${formatTime(message.created_at)}</span>
+              </div>
+              <div class="message-content">${escapeHtml(message.content)}</div>
+              <div class="message-time">
+                ${deleteButton}
+              </div>
             </div>
-            <div id="chat-title">Inbox</div>
-            <div id="messages-container" class="messages-container"></div>
-            <form id="message-form">
-                <input type="text" id="message-input" placeholder="Type a message..." required>
-                <select id="recipient-select" class="recipient-select">
-                    <option value="">Select a recipient</option>
-                </select>
-                <button type="submit">Send 🚀</button>
-            </form>
-        </div>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <style>
-        :root {
-            --bg-primary: #000000;
-            --bg-secondary: #000000;
-            --bg-tertiary: #000000;
-            --bg-card: #000000;
-            --bg-hover: #000000;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --text-tertiary: #808080;
-            --accent-primary: #ff6b35;
-            --accent-secondary: #ff8c42;
-            --accent-gradient: linear-gradient(135deg, #ff6b35, #ff8c42);
-            --border-color: #000000;
-            --border-hover: #3a3a3a;
-            --success: #4caf50;
-            --error: #f44336;
-            --warning: #ff9800;
-            --shadow: rgba(0, 0, 0, 0.9);
-            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-            --hover-shadow: 0 8px 30px rgba(255, 107, 53, 0.25);
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --border-radius: 12px;
-            --input-radius: 8px;
-            --button-radius: 20px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 360px;
-            margin: 0 auto;
-            padding: 0 12px;
-            width: 100%;
-        }
-
-        header {
-            background: var(--bg-secondary);
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px var(--shadow);
-            backdrop-filter: blur(8px);
-            background: rgba(10, 10, 10, 0.95);
-        }
-
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-        }
-
-        .navbar .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-
-        .navbar .logo:hover {
-            transform: scale(1.05);
-        }
-
-        .navbar .logo::before {
-            content: "🛒";
-            font-size: 1.4rem;
-        }
-
-        .navbar .nav-links {
-            display: none;
-            list-style: none;
-            flex-direction: column;
-            position: fixed;
-            top: 60px;
-            left: 0;
-            width: 100%;
-            background: var(--bg-secondary);
-            padding: 15px;
-            gap: 10px;
-            transform: translateY(-100%);
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--transition);
-            box-shadow: 0 4px 15px var(--shadow);
-            z-index: 99;
-            backdrop-filter: blur(8px);
-        }
-
-        .navbar .nav-links.active {
-            display: flex;
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .navbar .nav-links li {
-            display: flex;
-            align-items: center;
-        }
-
-        .navbar .nav-links a {
-            color: var(--text-primary);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            padding: 10px 15px;
-            border-radius: var(--button-radius);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .navbar .nav-links a:hover {
-            background: rgba(255, 107, 53, 0.15);
-            color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-
-        .navbar .nav-links a.active {
-            background: var(--accent-gradient);
-            color: white;
-            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
-        }
-
-        .navbar .nav-links a::before {
-            font-size: 1.1rem;
-        }
-
-        .navbar .nav-links a.dashboard::before {
-            content: "🏠";
-        }
-
-        .navbar .nav-links a.chat::before {
-            content: "💬";
-        }
-
-        .navbar .nav-links a.post-product::before {
-            content: "🛒";
-        }
-
-        .navbar .nav-links a.settings::before {
-            content: "⚙️";
-        }
-
-        .navbar .nav-links a.logout::before {
-            content: "🚪";
-        }
-
-        .navbar .post-product-btn {
-            background: var(--accent-gradient);
-            color: white;
-            padding: 8px 16px;
-            border-radius: var(--button-radius);
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: var(--transition);
-            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .navbar .post-product-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--hover-shadow);
-        }
-
-        .navbar .post-product-btn::before {
-            content: "➕";
-            font-size: 1.1rem;
-        }
-
-        .mobile-menu-toggle {
-            display: block;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 6px;
-            transition: var(--transition);
-        }
-
-        .mobile-menu-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        #user-info {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 12px;
-            background: var(--bg-card);
-            border-radius: var(--border-radius);
-            margin: 16px 0;
-            box-shadow: var(--card-shadow);
-            text-align: center;
-        }
-
-        #user-info span {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        #user-info span::before {
-            content: "👤";
-            font-size: 1.3rem;
-        }
-
-        #chat-section {
-            background: var(--bg-card);
-            padding: 16px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-            min-height: 500px;
-        }
-
-        #chat-section:hover {
-            border-color: var(--accent-primary);
-            box-shadow: var(--hover-shadow);
-        }
-
-        .chat-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 8px 12px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: none;
-            border-radius: var(--button-radius);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .tab-btn.active {
-            background: var(--accent-gradient);
-            color: white;
-            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-        }
-
-        .tab-btn:hover {
-            background: var(--bg-hover);
-            transform: translateY(-2px);
-        }
-
-        #chat-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .messages-container {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border-radius: var(--input-radius);
-            border: 1px solid var(--border-color);
-            margin-bottom: 12px;
-        }
-
-        .messages-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .messages-container::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: 3px;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb {
-            background: var(--accent-primary);
-            border-radius: 3px;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-secondary);
-        }
-
-        .message {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            border-radius: var(--input-radius);
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-
-        .message:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-
-        .message-content {
-            flex: 1;
-        }
-
-        .message-content strong {
-            color: var(--accent-primary);
-            margin-right: 8px;
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-
-        .message-content p {
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            display: inline;
-        }
-
-        .message-content small {
-            display: block;
-            margin-top: 6px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .delete-btn {
-            background: none;
-            border: none;
-            color: var(--error);
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: var(--transition);
-        }
-
-        .delete-btn:hover {
-            background: rgba(244, 67, 54, 0.2);
-            transform: scale(1.1);
-        }
-
-        .conversation {
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            border-radius: var(--input-radius);
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .conversation:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-
-        .conversation-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .conversation-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--accent-gradient);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .conversation-details {
-            flex: 1;
-        }
-
-        .conversation-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .conversation-preview {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        #message-form {
-            display: flex;
-            gap: 8px;
-            background: var(--bg-tertiary);
-            padding: 12px;
-            border-radius: var(--input-radius);
-            border: 1px solid var(--border-color);
-            flex-wrap: wrap;
-        }
-
-        #message-form input, #message-form select {
-            flex: 1;
-            padding: 8px 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--input-radius);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            transition: var(--transition);
-        }
-
-        #message-form input:focus, #message-form select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
-        }
-
-        #message-form select {
-            min-width: 120px;
-        }
-
-        #message-form button {
-            background: var(--accent-gradient);
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: var(--button-radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        #message-form button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .toast {
-            position: fixed;
-            top: 16px;
-            right: 12px;
-            left: 12px;
-            padding: 12px 16px;
-            border-radius: var(--input-radius);
-            color: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            z-index: 1000;
-            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1), slideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) 2.6s;
-            animation-fill-mode: forwards;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(8px);
-        }
-
-        .toast.success {
-            background: rgba(76, 175, 80, 0.95);
-            border-left: 4px solid var(--success);
-        }
-
-        .toast.success::before {
-            content: "✅";
-            font-size: 1.1rem;
-        }
-
-        .toast.error {
-            background: rgba(244, 67, 54, 0.95);
-            border-left: 4px solid var(--error);
-        }
-
-        .toast.error::before {
-            content: "❌";
-            font-size: 1.1rem;
-        }
-
-        .toast.warning {
-            background: rgba(255, 152, 0, 0.95);
-            border-left: 4px solid var(--warning);
-        }
-
-        .toast.warning::before {
-            content: "⚠️";
-            font-size: 1.1rem;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .loading-spinner::before {
-            content: '';
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--accent-primary);
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            text-align: center;
-            padding: 20px;
-            color: var(--error);
-            background: rgba(244, 67, 54, 0.1);
-            border-radius: var(--input-radius);
-            border: 1px solid var(--error);
-            font-size: 1rem;
-            font-weight: 600;
-            box-shadow: 0 2px 10px rgba(244, 67, 54, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .no-messages {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-secondary);
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .no-messages::before {
-            content: "💬";
-            font-size: 1.5rem;
-        }
-
-        footer {
-            background: var(--bg-secondary);
-            padding: 20px 0;
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            margin-top: auto;
-            box-shadow: 0 -2px 10px var(--shadow);
-            backdrop-filter: blur(8px);
-            background: rgba(10, 10, 10, 0.95);
-        }
-
-        footer p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        footer p::before {
-            content: "©";
-            font-size: 1rem;
-        }
-
-        @media (min-width: 360px) {
-            .messages-container {
-                max-height: 400px;
-            }
-        }
-
-        @media (min-width: 768px) {
-            .container {
-                max-width: 720px;
-            }
-
-            .navbar .nav-links {
-                display: flex;
-                flex-direction: row;
-                position: static;
-                transform: none;
-                opacity: 1;
-                visibility: visible;
-                padding: 0;
-                gap: 16px;
-                box-shadow: none;
-                background: none;
-            }
-
-            .navbar .nav-links a {
-                width: auto;
-                padding: 8px 12px;
-            }
-
-            .navbar .post-product-btn {
-                display: flex;
-            }
-
-            .mobile-menu-toggle {
-                display: none;
-            }
-
-            #message-form {
-                flex-wrap: nowrap;
-            }
-
-            .messages-container {
-                max-height: 500px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .chat-tabs {
-                flex-direction: column;
-            }
-
-            .tab-btn {
-                width: 100%;
-            }
-
-            .message {
-                flex-direction: column;
-                align-items: flex-end;
-            }
-
-            .delete-btn {
-                align-self: flex-end;
-                margin-top: 8px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-    </style>
-    <script>
-                // Initialize Supabase
-        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Cache DOM elements
-        const elements = {
-            mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
-            navLinks: document.querySelector('.nav-links'),
-            messageForm: document.getElementById('message-form'),
-            messageInput: document.getElementById('message-input'),
-            recipientSelect: document.getElementById('recipient-select'),
-            messagesContainer: document.getElementById('messages-container'),
-            chatTitle: document.getElementById('chat-title'),
-            chatHeader: document.getElementById('chat-header'),
-            logoutBtn: document.getElementById('logout-btn'),
-            userName: document.getElementById('user-name'),
-            backToInboxBtn: document.getElementById('back-to-inbox'),
-            communityTab: document.getElementById('community-tab'),
-            inboxTab: document.getElementById('inbox-tab'),
-            tabsContainer: document.getElementById('tabs-container')
-        };
-
-        // State management
-        let currentUser = null;
-        let activeTab = 'inbox'; // Default to inbox tab
-        let activeConversation = null;
-        let onlineUsers = new Set();
-
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            if (elements.navLinks) {
-                elements.navLinks.classList.toggle('active');
-            }
-        }
-
-        if (elements.mobileMenuToggle) {
-            elements.mobileMenuToggle.addEventListener('click', toggleMobileMenu);
-        }
-
-        // Close mobile menu when clicking a link
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (elements.navLinks) {
-                    elements.navLinks.classList.remove('active');
-                }
-            });
+          `;
+        } else {
+          messageEl.innerHTML = `
+            <div class="message-bubble">
+              <div class="message-content">${escapeHtml(message.content)}</div>
+              <div class="message-time">
+                ${formatTime(message.created_at)}
+                ${deleteButton}
+              </div>
+            </div>
+          `;
+        }
+        
+        fragment.appendChild(messageEl);
+      });
+
+      elements.messagesContainer.appendChild(fragment);
+      
+      // Auto-scroll to bottom
+      setTimeout(() => {
+        elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+      }, 100);
+
+      // Add delete button event listeners
+      document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (confirm('Are you sure you want to delete this message?')) {
+            await deleteMessage(button.getAttribute('data-id'));
+          }
         });
+      });
 
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            // Remove existing toasts of the same type to prevent stacking
-            document.querySelectorAll(`.toast.${type}`).forEach(toast => toast.remove());
-            
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+      // Mark messages as read for private chats
+      if (!isCommunity && recipientId) {
+        await markMessagesAsRead(recipientId);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+      showToast('Error loading messages 😕', 'error');
+    }
+  }
+
+  // Load private messages for a specific user
+  async function loadPrivateMessages(recipientId, recipientName) {
+    activeConversation = recipientId;
+    
+    // Show chat header and input
+    elements.chatHeader.style.display = 'flex';
+    elements.messageInputContainer.style.display = 'flex';
+    
+    // Update chat header
+    elements.chatUserAvatar.textContent = escapeHtml(recipientName.charAt(0).toUpperCase());
+    elements.chatUserName.textContent = escapeHtml(recipientName);
+    elements.chatUserStatus.textContent = onlineUsers.has(recipientId) ? 'Online' : 'Offline';
+    
+    // Hide sidebar on mobile
+    if (isMobile()) {
+      elements.sidebar.classList.add('hidden');
+    }
+
+    await loadMessages(recipientId, false);
+  }
+
+  // Load community chat
+  async function loadCommunityChat() {
+    activeConversation = 'community';
+    
+    // Show chat header and input
+    elements.chatHeader.style.display = 'flex';
+    elements.messageInputContainer.style.display = 'flex';
+    
+    // Update chat header
+    elements.chatUserAvatar.textContent = '💬';
+    elements.chatUserName.textContent = 'Community Chat';
+    elements.chatUserStatus.textContent = 'Everyone';
+    
+    // Hide sidebar on mobile
+    if (isMobile()) {
+      elements.sidebar.classList.add('hidden');
+    }
+
+    await loadMessages(null, true);
+  }
+
+  // Mark messages as read
+  async function markMessagesAsRead(senderId) {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('recipient_id', currentUserId)
+        .eq('user_id', senderId)
+        .eq('is_read', false);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }
+
+  // Delete message
+  async function deleteMessage(messageId) {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+      
+      // Verify the message belongs to the current user
+      const { data: message } = await supabase
+        .from('messages')
+        .select('user_id')
+        .eq('id', messageId)
+        .single();
+        
+      if (!message || message.user_id !== currentUserId) {
+        showToast('You can only delete your own messages', 'error');
+        return;
+      }
+      
+      // Delete the message
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        throw error;
+      }
+
+      showToast('Message deleted successfully 🗑️');
+      
+      // Reload messages based on current conversation
+      if (activeConversation === 'community') {
+        loadCommunityChat();
+      } else {
+        const recipientName = elements.chatUserName.textContent;
+        loadPrivateMessages(activeConversation, recipientName);
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      showToast(error.message, 'error');
+    }
+  }
+
+  // Send a message
+  elements.messageForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    try {
+      const user = await checkAuth();
+      if (!user) return;
+
+      const content = elements.messageInput.value.trim();
+      if (!content) {
+        showToast('Please enter a message', 'error');
+        return;
+      }
+
+      const isPrivate = activeConversation !== 'community';
+      
+      const messageData = {
+        content,
+        user_id: user.id,
+        is_private: isPrivate,
+        is_read: false
+      };
+
+      if (isPrivate) {
+        messageData.recipient_id = activeConversation;
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .insert([messageData]);
+
+      if (error) {
+        throw error;
+      }
+
+      elements.messageInput.value = '';
+      
+      // Reload messages based on current conversation
+      if (isPrivate) {
+        const recipientName = elements.chatUserName.textContent;
+        loadPrivateMessages(activeConversation, recipientName);
+      } else {
+        loadCommunityChat();
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Tab switching
+  elements.tabBtns.forEach(button => {
+    button.addEventListener('click', () => {
+      elements.tabBtns.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      activeTab = button.getAttribute('data-tab');
+      
+      // Reset conversation
+      activeConversation = null;
+      elements.chatHeader.style.display = 'none';
+      elements.messageInputContainer.style.display = 'none';
+      elements.messagesContainer.innerHTML = '<div class="no-messages">Select a conversation to start chatting</div>';
+      
+      // Load conversations
+      loadConversations();
+    });
+  });
+
+  // Back to inbox button
+  elements.backToInboxBtn?.addEventListener('click', () => {
+    elements.sidebar.classList.remove('hidden');
+    elements.chatHeader.style.display = 'none';
+    elements.messageInputContainer.style.display = 'none';
+    elements.messagesContainer.innerHTML = '<div class="no-messages">Select a conversation to start chatting</div>';
+    activeConversation = null;
+  });
+
+  // Initialize app
+  async function initApp() {
+    try {
+      currentUser = await checkAuth();
+      if (!currentUser) return;
+
+      // Set up real-time subscriptions
+      setupRealtimeSubscriptions();
+
+      // Check if we're coming from a product page
+      const sellerId = sessionStorage.getItem('chatSellerId');
+      const sellerName = sessionStorage.getItem('chatSellerName');
+      const productTitle = sessionStorage.getItem('chatProductTitle');
+
+      if (sellerId && sellerName && productTitle) {
+        // Switch to inbox tab
+        elements.tabBtns.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="inbox"]').classList.add('active');
+        activeTab = 'inbox';
+        
+        // Load conversation with seller
+        await loadPrivateMessages(sellerId, sellerName);
+        
+        // Pre-fill message input
+        elements.messageInput.value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
+        
+        // Clear session storage
+        sessionStorage.removeItem('chatSellerId');
+        sessionStorage.removeItem('chatSellerName');
+        sessionStorage.removeItem('chatProductTitle');
+      } else {
+        // Load inbox conversations by default
+        loadConversations();
+      }
+    } catch (error) {
+      console.error('Initialization error:', error);
+      showToast('Failed to initialize the chat. Please refresh the page.', 'error');
+    }
+  }
+
+  // Setup real-time subscriptions
+  function setupRealtimeSubscriptions() {
+    // Set up real-time subscriptions for online status
+    const channel = supabase.channel('online-users');
+    
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const newState = channel.presenceState();
+        onlineUsers = new Set(Object.keys(newState));
+        
+        updateOnlineStatus();
+        
+        // Update conversation list
+        if (!activeConversation) {
+          loadConversations();
         }
-
-        // Check authentication and ensure profile exists
-        async function checkAuth() {
-            try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                
-                if (error) {
-                    throw new Error(`Authentication error: ${error.message}`);
-                }
-                
-                if (!user) {
-                    showToast('Please log in to access the chat 😕', 'error');
-                    window.location.href = 'index.html';
-                    return null;
-                }
-
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('id, full_name')
-                    .eq('id', user.id)
-                    .single();
-                    
-                if (profileError || !profile) {
-                    const { error: insertError } = await supabase
-                        .from('profiles')
-                        .insert([{
-                            id: user.id,
-                            full_name: user.user_metadata?.full_name || user.email
-                        }]);
-                        
-                    if (insertError) {
-                        console.error('Error creating profile:', insertError);
-                        showToast('Error setting up profile 😕', 'error');
-                    }
-                }
-
-                if (elements.userName) {
-                    elements.userName.textContent = `Welcome, ${user.user_metadata?.full_name || user.email} 👋`;
-                }
-                
-                return user;
-            } catch (authError) {
-                console.error('Authentication error:', authError);
-                showToast('Authentication failed. Please log in again.', 'error');
-                window.location.href = 'index.html';
-                return null;
-            }
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        onlineUsers.add(key);
+        updateOnlineStatus();
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        onlineUsers.delete(key);
+        updateOnlineStatus();
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED' && currentUser) {
+          await channel.track({
+            user_id: currentUser.id,
+            online_at: new Date().toISOString()
+          });
         }
+      });
 
-        // Load users for recipient select
-        async function loadUsers() {
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('id, full_name')
-                    .neq('id', currentUser?.id || '') // Exclude current user
-                    .order('full_name', { ascending: true });
-
-                if (error) {
-                    throw new Error(`Error loading users: ${error.message}`);
-                }
-
-                elements.recipientSelect.innerHTML = '<option value="">Select a recipient</option>';
-                data.forEach(user => {
-                    if (user.full_name) {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.full_name;
-                        elements.recipientSelect.appendChild(option);
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading users:', error);
-                showToast('Error loading users 😕', 'error');
-            }
+    // Set up real-time subscription for messages
+    supabase
+      .channel('messages')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        if (activeConversation === 'community') {
+          loadCommunityChat();
+        } else if (activeConversation) {
+          const recipientName = elements.chatUserName.textContent;
+          loadPrivateMessages(activeConversation, recipientName);
+        } else {
+          loadConversations();
         }
-                // Load community messages
-        async function loadCommunityMessages() {
-            try {
-                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages... ⏳</div>';
+      })
+      .subscribe();
+  }
 
-                const { data: userData } = await supabase.auth.getUser();
-                const currentUserId = userData?.user?.id;
-
-                const { data, error } = await supabase
-                    .from('messages')
-                    .select(`
-                        id,
-                        content,
-                        user_id,
-                        created_at,
-                        profiles!messages_user_id_fkey(full_name)
-                    `)
-                    .eq('is_private', false)
-                    .order('created_at', { ascending: true });
-
-                if (error) {
-                    throw new Error(`Error loading messages: ${error.message}`);
-                }
-
-                elements.messagesContainer.innerHTML = '';
-                if (data.length === 0) {
-                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start the conversation! 😊</div>';
-                    return;
-                }
-
-                const fragment = document.createDocumentFragment();
-                
-                data.forEach(message => {
-                    const isCurrentUser = message.user_id === currentUserId;
-                    const messageEl = document.createElement('div');
-                    messageEl.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
-                    
-                    // Only show delete button if the message belongs to the current user
-                    const deleteButton = isCurrentUser
-                        ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
-                        : '';
-
-                    messageEl.innerHTML = `
-                        <div class="message-bubble">
-                            <div class="message-header">
-                                <span class="message-sender">${escapeHtml(message.profiles?.full_name || 'Unknown')}</span>
-                                <span class="message-time">${formatTime(message.created_at)}</span>
-                            </div>
-                            <div class="message-content">${escapeHtml(message.content)}</div>
-                            ${deleteButton}
-                        </div>
-                    `;
-                    fragment.appendChild(messageEl);
-                });
-
-                elements.messagesContainer.appendChild(fragment);
-                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
-
-                // Add delete button event listeners only for messages that have delete buttons
-                document.querySelectorAll('.delete-btn').forEach(button => {
-                    button.addEventListener('click', async () => {
-                        const messageId = button.getAttribute('data-id');
-                        // Double-check that the message belongs to the current user before allowing deletion
-                        const messageElement = button.closest('.message');
-                        if (messageElement && messageElement.classList.contains('sent')) {
-                            if (confirm('Are you sure you want to delete this message?')) {
-                                await deleteMessage(messageId);
-                            }
-                        } else {
-                            showToast('You can only delete your own messages', 'error');
-                        }
-                    });
-                });
-            } catch (error) {
-                console.error('Error loading community messages:', error);
-                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
-                showToast('Error loading messages 😕', 'error');
-            }
+  // Update online status in UI
+  function updateOnlineStatus() {
+    if (activeConversation && activeConversation !== 'community') {
+      const statusElement = elements.chatUserStatus;
+      const avatarElement = elements.chatUserAvatar;
+      
+      if (statusElement) {
+        statusElement.textContent = onlineUsers.has(activeConversation) ? 'Online' : 'Offline';
+      }
+      
+      if (avatarElement) {
+        if (onlineUsers.has(activeConversation)) {
+          avatarElement.classList.add('online');
+        } else {
+          avatarElement.classList.remove('online');
         }
+      }
+    }
+  }
 
-        // Delete message function with additional security check
-        async function deleteMessage(messageId) {
-            try {
-                // First, verify the message belongs to the current user
-                const { data: userData } = await supabase.auth.getUser();
-                const currentUserId = userData?.user?.id;
-                
-                const { data: message, error: fetchError } = await supabase
-                    .from('messages')
-                    .select('user_id')
-                    .eq('id', messageId)
-                    .single();
-                    
-                if (fetchError) {
-                    throw new Error(`Error fetching message: ${fetchError.message}`);
-                }
-                
-                if (message.user_id !== currentUserId) {
-                    showToast('You can only delete your own messages', 'error');
-                    return;
-                }
-                
-                // If we get here, the message belongs to the current user, so proceed with deletion
-                const { error } = await supabase
-                    .from('messages')
-                    .delete()
-                    .eq('id', messageId);
+  // Helper functions
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 
-                if (error) {
-                    throw new Error(`Error deleting message: ${error.message}`);
-                }
+  function formatTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // If it's today, show time only
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // If it's yesterday, show "Yesterday"
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    
+    // Otherwise, show date
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
 
-                showToast('Message deleted successfully 🗑️');
-                
-                // Reload messages based on current tab
-                if (activeTab === 'community') {
-                    loadCommunityMessages();
-                } else {
-                    const recipientId = elements.recipientSelect.value;
-                    if (recipientId) {
-                        const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
-                        loadPrivateMessages(recipientId, recipientName);
-                    } else {
-                        loadInboxConversations();
-                    }
-                }
-            } catch (error) {
-                console.error('Error deleting message:', error);
-                showToast(error.message, 'error');
-            }
-        }
-
-
-
-
-        // Load inbox conversations
-        async function loadInboxConversations() {
-            try {
-                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading conversations... ⏳</div>';
-
-                const { data: userData } = await supabase.auth.getUser();
-                const currentUserId = userData?.user?.id;
-
-                const { data, error } = await supabase
-                    .from('messages')
-                    .select(`
-                        id,
-                        content,
-                        user_id,
-                        recipient_id,
-                        created_at,
-                        profiles!messages_user_id_fkey(full_name),
-                        recipient:profiles!messages_recipient_id_fkey(full_name)
-                    `)
-                    .eq('is_private', true)
-                    .or(`user_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    throw new Error(`Error loading conversations: ${error.message}`);
-                }
-
-                elements.messagesContainer.innerHTML = '';
-                if (data.length === 0) {
-                    elements.messagesContainer.innerHTML = '<div class="no-messages">No conversations yet. Start a private chat! 📩</div>';
-                    return;
-                }
-
-                const conversations = {};
-                data.forEach(message => {
-                    const otherUserId = message.user_id === currentUserId ? message.recipient_id : message.user_id;
-                    const otherUserName = message.user_id === currentUserId 
-                        ? (message.recipient?.full_name || 'Unknown') 
-                        : (message.profiles?.full_name || 'Unknown');
-                        
-                    if (!conversations[otherUserId]) {
-                        conversations[otherUserId] = {
-                            full_name: otherUserName,
-                            lastMessage: message.content,
-                            lastTime: message.created_at,
-                            unread: message.user_id !== currentUserId, // If not sent by current user, it's unread
-                            messages: []
-                        };
-                    }
-                    conversations[otherUserId].messages.push(message);
-                });
-
-                const fragment = document.createDocumentFragment();
-                
-                Object.entries(conversations).forEach(([userId, convo]) => {
-                    const conversationEl = document.createElement('div');
-                    conversationEl.className = 'conversation';
-                    conversationEl.setAttribute('data-user-id', userId);
-                    
-                    const isOnline = onlineUsers.has(userId);
-                    
-                    conversationEl.innerHTML = `
-                        <div class="conversation-avatar ${isOnline ? 'online' : ''}">
-                            ${escapeHtml(convo.full_name.charAt(0).toUpperCase())}
-                            ${isOnline ? '<span class="online-indicator"></span>' : ''}
-                        </div>
-                        <div class="conversation-details">
-                            <div class="conversation-header">
-                                <div class="conversation-name">${escapeHtml(convo.full_name)}</div>
-                                <div class="conversation-time">${formatTime(convo.lastTime)}</div>
-                            </div>
-                            <div class="conversation-preview">${escapeHtml(convo.lastMessage)}</div>
-                        </div>
-                        ${convo.unread ? '<div class="unread-indicator"></div>' : ''}
-                    `;
-                    fragment.appendChild(conversationEl);
-
-                    conversationEl.addEventListener('click', () => {
-                        elements.recipientSelect.value = userId;
-                        loadPrivateMessages(userId, convo.full_name);
-                    });
-                });
-
-                elements.messagesContainer.appendChild(fragment);
-            } catch (error) {
-                console.error('Error loading inbox conversations:', error);
-                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
-                showToast('Error loading conversations 😕', 'error');
-            }
-        }
-
-        // Load private messages for a specific user
-        async function loadPrivateMessages(recipientId, recipientName) {
-            try {
-                // Show chat header and hide tabs when in a conversation
-                if (elements.chatHeader) {
-                    elements.chatHeader.style.display = 'flex';
-                    elements.chatHeader.innerHTML = `
-                        <button id="back-to-inbox" class="back-btn">←</button>
-                        <div class="chat-user-info">
-                            <div class="chat-user-avatar">${escapeHtml(recipientName.charAt(0).toUpperCase())}</div>
-                            <div class="chat-user-details">
-                                <div class="chat-user-name">${escapeHtml(recipientName)}</div>
-                                <div class="chat-user-status">${onlineUsers.has(recipientId) ? 'Online' : 'Offline'}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                if (elements.tabsContainer) {
-                    elements.tabsContainer.style.display = 'none';
-                }
-
-                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages... ⏳</div>';
-
-                const { data: userData } = await supabase.auth.getUser();
-                const currentUserId = userData?.user?.id;
-
-                const { data, error } = await supabase
-                    .from('messages')
-                    .select(`
-                        id,
-                        content,
-                        user_id,
-                        created_at,
-                        profiles!messages_user_id_fkey(full_name)
-                    `)
-                    .eq('is_private', true)
-                    .or(`and(user_id.eq.${currentUserId},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUserId})`)
-                    .order('created_at', { ascending: true });
-
-                if (error) {
-                    throw new Error(`Error loading private messages: ${error.message}`);
-                }
-
-                if (elements.chatTitle) {
-                    elements.chatTitle.textContent = `Chat with ${recipientName} 📩`;
-                }
-                if (elements.recipientSelect) {
-                    elements.recipientSelect.value = recipientId;
-                }
-
-                elements.messagesContainer.innerHTML = '';
-
-                if (data.length === 0) {
-                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start the conversation! 😊</div>';
-                    return;
-                }
-
-                const fragment = document.createDocumentFragment();
-                
-                data.forEach(message => {
-                    const isCurrentUser = message.user_id === currentUserId;
-                    const messageEl = document.createElement('div');
-                    messageEl.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
-                    
-                    const deleteButton = isCurrentUser
-                        ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
-                        : '';
-
-                    messageEl.innerHTML = `
-                        <div class="message-bubble">
-                            <div class="message-content">${escapeHtml(message.content)}</div>
-                            <div class="message-footer">
-                                <span class="message-time">${formatTime(message.created_at)}</span>
-                                ${deleteButton}
-                            </div>
-                        </div>
-                    `;
-                    fragment.appendChild(messageEl);
-                });
-
-                elements.messagesContainer.appendChild(fragment);
-                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
-
-                // Add delete button event listeners
-                document.querySelectorAll('.delete-btn').forEach(button => {
-                    button.addEventListener('click', async () => {
-                        if (confirm('Are you sure you want to delete this message?')) {
-                            await deleteMessage(button.getAttribute('data-id'));
-                        }
-                    });
-                });
-
-                // Add back button event listener
-                const backBtn = document.getElementById('back-to-inbox');
-                if (backBtn) {
-                    backBtn.addEventListener('click', () => {
-                        if (elements.chatHeader) {
-                            elements.chatHeader.style.display = 'none';
-                        }
-                        if (elements.tabsContainer) {
-                            elements.tabsContainer.style.display = 'flex';
-                        }
-                        loadInboxConversations();
-                    });
-                }
-
-                // Mark messages as read
-                await markMessagesAsRead(recipientId);
-            } catch (error) {
-                console.error('Error loading private messages:', error);
-                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
-                showToast('Error loading messages 😕', 'error');
-            }
-        }
-
-        // Mark messages as read
-        async function markMessagesAsRead(senderId) {
-            try {
-                const { data: userData } = await supabase.auth.getUser();
-                const currentUserId = userData?.user?.id;
-
-                const { error } = await supabase
-                    .from('messages')
-                    .update({ is_read: true })
-                    .eq('recipient_id', currentUserId)
-                    .eq('user_id', senderId)
-                    .eq('is_read', false);
-
-                if (error) {
-                    console.error('Error marking messages as read:', error);
-                }
-            } catch (error) {
-                console.error('Error marking messages as read:', error);
-            }
-        }
-
-        // Delete message
-        async function deleteMessage(messageId) {
-            try {
-                const { error } = await supabase
-                    .from('messages')
-                    .delete()
-                    .eq('id', messageId);
-
-                if (error) {
-                    throw new Error(`Error deleting message: ${error.message}`);
-                }
-
-                showToast('Message deleted successfully 🗑️');
-                
-                if (activeTab === 'community') {
-                    loadCommunityMessages();
-                } else {
-                    const recipientId = elements.recipientSelect.value;
-                    if (recipientId) {
-                        const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
-                        loadPrivateMessages(recipientId, recipientName);
-                    } else {
-                        loadInboxConversations();
-                    }
-                }
-            } catch (error) {
-                console.error('Error deleting message:', error);
-                showToast(error.message, 'error');
-            }
-        }
-
-        // Send a message
-        elements.messageForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            try {
-                const user = await checkAuth();
-                if (!user) return;
-
-                const content = elements.messageInput.value.trim();
-                const recipientId = elements.recipientSelect.value;
-                const isPrivate = activeTab === 'inbox' && !!recipientId; // Convert to boolean
-
-                if (!content) {
-                    showToast('Please enter a message', 'error');
-                    return;
-                }
-
-                if (isPrivate && !recipientId) {
-                    showToast('Please select a recipient for private messages 📩', 'error');
-                    return;
-                }
-
-                const messageData = {
-                    content,
-                    user_id: user.id,
-                    is_private: isPrivate,
-                    is_read: false
-                };
-
-                if (isPrivate) {
-                    messageData.recipient_id = recipientId;
-                }
-
-                const { error } = await supabase
-                    .from('messages')
-                    .insert([messageData]);
-
-                if (error) {
-                    throw new Error(`Error sending message: ${error.message}`);
-                }
-
-                elements.messageInput.value = '';
-                
-                if (isPrivate) {
-                    const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
-                    loadPrivateMessages(recipientId, recipientName);
-                } else {
-                    loadCommunityMessages();
-                }
-            } catch (error) {
-                console.error('Error sending message:', error);
-                showToast(error.message, 'error');
-            }
-        });
-
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                activeTab = button.getAttribute('data-tab');
-                
-                if (elements.chatTitle) {
-                    elements.chatTitle.textContent = activeTab === 'community' ? 'Community Chat 💬' : 'Inbox 📩';
-                }
-                
-                if (elements.recipientSelect) {
-                    elements.recipientSelect.classList.toggle('hidden', activeTab === 'community');
-                    if (activeTab === 'community') {
-                        elements.recipientSelect.value = '';
-                    }
-                }
-
-                // Show tabs container when switching tabs
-                if (elements.tabsContainer) {
-                    elements.tabsContainer.style.display = 'flex';
-                }
-                
-                // Hide chat header when switching tabs
-                if (elements.chatHeader) {
-                    elements.chatHeader.style.display = 'none';
-                }
-
-                if (activeTab === 'community') {
-                    loadCommunityMessages();
-                } else {
-                    loadInboxConversations();
-                }
-            });
-        });
-
-        // Logout
-        elements.logoutBtn?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            try {
-                showToast('Logging out...', 'warning');
-                await supabase.auth.signOut();
-                showToast('👋 Logged out successfully');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Error logging out. Please try again.', 'error');
-            }
-        });
-
-        // Initialize app
-        async function initApp() {
-            try {
-                currentUser = await checkAuth();
-                if (!currentUser) return;
-
-                await loadUsers();
-
-                // Set up real-time subscriptions for online status
-                const channel = supabase.channel('online-users');
-                
-                channel
-                    .on('presence', { event: 'sync' }, () => {
-                        const newState = channel.presenceState();
-                        onlineUsers = new Set(Object.keys(newState));
-                        
-                        // If we're in a conversation, update the online status
-                        if (activeConversation) {
-                            const statusElement = document.querySelector('.chat-user-status');
-                            if (statusElement) {
-                                statusElement.textContent = onlineUsers.has(activeConversation) ? 'Online' : 'Offline';
-                            }
-                            
-                            const avatarElement = document.querySelector('.chat-user-avatar');
-                            if (avatarElement) {
-                                if (onlineUsers.has(activeConversation)) {
-                                    avatarElement.classList.add('online');
-                                } else {
-                                    avatarElement.classList.remove('online');
-                                }
-                            }
-                        }
-                        
-                        // Update conversation list
-                        if (activeTab === 'inbox' && !activeConversation) {
-                            loadInboxConversations();
-                        }
-                    })
-                    .on('presence', { event: 'join' }, ({ key, currentPresences }) => {
-                        onlineUsers.add(key);
-                        
-                        // If we're in a conversation with this user, update status
-                        if (activeConversation === key) {
-                            const statusElement = document.querySelector('.chat-user-status');
-                            if (statusElement) {
-                                statusElement.textContent = 'Online';
-                            }
-                            
-                            const avatarElement = document.querySelector('.chat-user-avatar');
-                            if (avatarElement) {
-                                avatarElement.classList.add('online');
-                            }
-                        }
-                    })
-                    .on('presence', { event: 'leave' }, ({ key }) => {
-                        onlineUsers.delete(key);
-                        
-                        // If we're in a conversation with this user, update status
-                        if (activeConversation === key) {
-                            const statusElement = document.querySelector('.chat-user-status');
-                            if (statusElement) {
-                                statusElement.textContent = 'Offline';
-                            }
-                            
-                            const avatarElement = document.querySelector('.chat-user-avatar');
-                            if (avatarElement) {
-                                avatarElement.classList.remove('online');
-                            }
-                        }
-                    })
-                    .subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED' && currentUser) {
-                            // Track current user's presence
-                            await channel.track({
-                                user_id: currentUser.id,
-                                online_at: new Date().toISOString()
-                            });
-                        }
-                    });
-
-                // Set up real-time subscription for messages
-                supabase
-                    .channel('messages')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-                        if (activeTab === 'community') {
-                            loadCommunityMessages();
-                        } else {
-                            const recipientId = elements.recipientSelect.value;
-                            if (recipientId) {
-                                const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
-                                loadPrivateMessages(recipientId, recipientName);
-                            } else {
-                                loadInboxConversations();
-                            }
-                        }
-                    })
-                    .subscribe();
-
-                // Check if we're coming from a product page
-                const sellerId = sessionStorage.getItem('chatSellerId');
-                const sellerName = sessionStorage.getItem('chatSellerName');
-                const productTitle = sessionStorage.getItem('chatProductTitle');
-
-                if (sellerId && sellerName && productTitle) {
-                    const inboxTab = document.querySelector('.tab-btn[data-tab="inbox"]');
-                    const communityTab = document.querySelector('.tab-btn[data-tab="community"]');
-                    
-                    if (inboxTab) inboxTab.classList.add('active');
-                    if (communityTab) communityTab.classList.remove('active');
-                    
-                    activeTab = 'inbox';
-                    
-                    if (elements.chatTitle) {
-                        elements.chatTitle.textContent = `Chat with ${sellerName} about: ${productTitle} 📩`;
-                    }
-                    
-                    if (elements.recipientSelect) {
-                        elements.recipientSelect.value = sellerId;
-                        elements.recipientSelect.classList.remove('hidden');
-                    }
-                    
-                    if (elements.messageInput) {
-                        elements.messageInput.value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
-                    }
-                    
-                    // Set active conversation
-                    activeConversation = sellerId;
-                    
-                    await loadPrivateMessages(sellerId, sellerName);
-
-                    sessionStorage.removeItem('chatSellerId');
-                    sessionStorage.removeItem('chatSellerName');
-                    sessionStorage.removeItem('chatProductTitle');
-                } else {
-                    const inboxTab = document.querySelector('.tab-btn[data-tab="inbox"]');
-                    if (inboxTab) inboxTab.classList.add('active');
-                    elements.recipientSelect.classList.remove('hidden');
-                    loadInboxConversations();
-                }
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showToast('Failed to initialize the chat. Please refresh the page.', 'error');
-            }
-        }
-
-        // Helper functions
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            
-            // If it's today, show time only
-            if (date.toDateString() === now.toDateString()) {
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            }
-            
-            // If it's yesterday, show "Yesterday"
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            if (date.toDateString() === yesterday.toDateString()) {
-                return 'Yesterday';
-            }
-            
-            // Otherwise, show date
-            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        }
-
-        // Initialize app when DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-
-
+  // Initialize app when DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', initApp);
+  
+  // Handle orientation changes for mobile devices
+  window.addEventListener('orientationchange', function() {
+    setTimeout(() => {
+      if (activeConversation === 'community') {
+        loadCommunityChat();
+      } else if (activeConversation) {
+        const recipientName = elements.chatUserName.textContent;
+        loadPrivateMessages(activeConversation, recipientName);
+      }
+    }, 300);
+  });
+</script>
 </body>
 </html>

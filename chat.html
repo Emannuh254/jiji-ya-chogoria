@@ -3,21 +3,21 @@
 <head>
     <title>Jiji ya Chogoria - Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
-    <link rel="stylesheet" href="index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <header>
         <div class="container">
             <nav class="navbar">
-                <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
+                <a href="dashboard.html" class="logo">Jiji ya Chogoria 🛍️</a>
                 <ul class="nav-links">
-                    <li><a href="dashboard.html" class="dashboard">Dashboard</a></li>
-                    <li><a href="chat.html" class="chat active">Chat</a></li>
-                    <li><a href="post-product.html" class="post product">Post product 🛒</a></li>
-                    <li><a href="settings.html" class="settings">Settings</a></li>
-                    <li><a href="#" class="logout" id="logout-btn">Logout</a></li>
+                    <li><a href="dashboard.html" class="dashboard">Dashboard 📊</a></li>
+                    <li><a href="chat.html" class="chat active">Chat 💬</a></li>
+                    <li><a href="post-product.html" class="post-product">Post Product 🛒</a></li>
+                    <li><a href="settings.html" class="settings">Settings ⚙️</a></li>
+                    <li><a href="#" class="logout" id="logout-btn">Logout 🚪</a></li>
                 </ul>
-                <a href="post-product.html" class="post-product-btn">Post Product</a>
+                <a href="post-product.html" class="post-product-btn">Post Product 🛒</a>
                 <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
             </nav>
         </div>
@@ -28,17 +28,19 @@
             <span id="user-name"></span>
         </div>
         
-        <div id="status-section">
-            <h3>Statuses (Coming Soon)</h3>
-            <p>Status feature will be available in future updates</p>
-        </div>
-        
         <div id="chat-section">
-            <h2 id="chat-title">Community Chat</h2>
-            <div id="messages-container"></div>
+            <div class="chat-tabs">
+                <button class="tab-btn" data-tab="community">Community Chat 💬</button>
+                <button class="tab-btn active" data-tab="inbox">Inbox 📩</button>
+            </div>
+            <div id="chat-title">Inbox</div>
+            <div id="messages-container" class="messages-container"></div>
             <form id="message-form">
                 <input type="text" id="message-input" placeholder="Type a message..." required>
-                <button type="submit">Send</button>
+                <select id="recipient-select" class="recipient-select">
+                    <option value="">Select a recipient</option>
+                </select>
+                <button type="submit">Send 🚀</button>
             </form>
         </div>
     </main>
@@ -49,197 +51,1290 @@
         </div>
     </footer>
 
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #141414;
+            --bg-card: #1a1a1a;
+            --bg-hover: #222222;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #808080;
+            --accent-primary: #ff6b35;
+            --accent-secondary: #ff8c42;
+            --accent-gradient: linear-gradient(135deg, #ff6b35, #ff8c42);
+            --border-color: #2a2a2a;
+            --border-hover: #3a3a3a;
+            --success: #4caf50;
+            --error: #f44336;
+            --warning: #ff9800;
+            --shadow: rgba(0, 0, 0, 0.9);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            --hover-shadow: 0 8px 30px rgba(255, 107, 53, 0.25);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --border-radius: 12px;
+            --input-radius: 8px;
+            --button-radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 360px;
+            margin: 0 auto;
+            padding: 0 12px;
+            width: 100%;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px var(--shadow);
+            backdrop-filter: blur(8px);
+            background: rgba(10, 10, 10, 0.95);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .navbar .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .navbar .logo::before {
+            content: "🛒";
+            font-size: 1.4rem;
+        }
+
+        .navbar .nav-links {
+            display: none;
+            list-style: none;
+            flex-direction: column;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: var(--bg-secondary);
+            padding: 15px;
+            gap: 10px;
+            transform: translateY(-100%);
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px var(--shadow);
+            z-index: 99;
+            backdrop-filter: blur(8px);
+        }
+
+        .navbar .nav-links.active {
+            display: flex;
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .navbar .nav-links li {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 10px 15px;
+            border-radius: var(--button-radius);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .navbar .nav-links a:hover {
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .navbar .nav-links a.active {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .navbar .nav-links a::before {
+            font-size: 1.1rem;
+        }
+
+        .navbar .nav-links a.dashboard::before {
+            content: "🏠";
+        }
+
+        .navbar .nav-links a.chat::before {
+            content: "💬";
+        }
+
+        .navbar .nav-links a.post-product::before {
+            content: "🛒";
+        }
+
+        .navbar .nav-links a.settings::before {
+            content: "⚙️";
+        }
+
+        .navbar .nav-links a.logout::before {
+            content: "🚪";
+        }
+
+        .navbar .post-product-btn {
+            background: var(--accent-gradient);
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--button-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .navbar .post-product-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .navbar .post-product-btn::before {
+            content: "➕";
+            font-size: 1.1rem;
+        }
+
+        .mobile-menu-toggle {
+            display: block;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #user-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            margin: 16px 0;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+        }
+
+        #user-info span {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #user-info span::before {
+            content: "👤";
+            font-size: 1.3rem;
+        }
+
+        #chat-section {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            min-height: 500px;
+        }
+
+        #chat-section:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .chat-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: var(--button-radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        #chat-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .messages-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
+        }
+
+        .message {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: var(--input-radius);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .message:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-content strong {
+            color: var(--accent-primary);
+            margin-right: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .message-content p {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            display: inline;
+        }
+
+        .message-content small {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .delete-btn:hover {
+            background: rgba(244, 67, 54, 0.2);
+            transform: scale(1.1);
+        }
+
+        .conversation {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: var(--input-radius);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .conversation:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .conversation-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .conversation-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .conversation-details {
+            flex: 1;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .conversation-preview {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        #message-form {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        #message-form input, #message-form select {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--input-radius);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        #message-form input:focus, #message-form select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+        }
+
+        #message-form select {
+            min-width: 120px;
+        }
+
+        #message-form button {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: var(--button-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #message-form button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 16px;
+            right: 12px;
+            left: 12px;
+            padding: 12px 16px;
+            border-radius: var(--input-radius);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 1000;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1), slideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) 2.6s;
+            animation-fill-mode: forwards;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .toast.success {
+            background: rgba(76, 175, 80, 0.95);
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.success::before {
+            content: "✅";
+            font-size: 1.1rem;
+        }
+
+        .toast.error {
+            background: rgba(244, 67, 54, 0.95);
+            border-left: 4px solid var(--error);
+        }
+
+        .toast.error::before {
+            content: "❌";
+            font-size: 1.1rem;
+        }
+
+        .toast.warning {
+            background: rgba(255, 152, 0, 0.95);
+            border-left: 4px solid var(--warning);
+        }
+
+        .toast.warning::before {
+            content: "⚠️";
+            font-size: 1.1rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .loading-spinner::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: var(--error);
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: var(--input-radius);
+            border: 1px solid var(--error);
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(244, 67, 54, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .no-messages {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .no-messages::before {
+            content: "💬";
+            font-size: 1.5rem;
+        }
+
+        footer {
+            background: var(--bg-secondary);
+            padding: 20px 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+            box-shadow: 0 -2px 10px var(--shadow);
+            backdrop-filter: blur(8px);
+            background: rgba(10, 10, 10, 0.95);
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        footer p::before {
+            content: "©";
+            font-size: 1rem;
+        }
+
+        @media (min-width: 360px) {
+            .messages-container {
+                max-height: 400px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 720px;
+            }
+
+            .navbar .nav-links {
+                display: flex;
+                flex-direction: row;
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                padding: 0;
+                gap: 16px;
+                box-shadow: none;
+                background: none;
+            }
+
+            .navbar .nav-links a {
+                width: auto;
+                padding: 8px 12px;
+            }
+
+            .navbar .post-product-btn {
+                display: flex;
+            }
+
+            .mobile-menu-toggle {
+                display: none;
+            }
+
+            #message-form {
+                flex-wrap: nowrap;
+            }
+
+            .messages-container {
+                max-height: 500px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+
+            .message {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .delete-btn {
+                align-self: flex-end;
+                margin-top: 8px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+
     <script>
         // Initialize Supabase
         const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Cache DOM elements
+        const elements = {
+            mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
+            navLinks: document.querySelector('.nav-links'),
+            messageForm: document.getElementById('message-form'),
+            messageInput: document.getElementById('message-input'),
+            recipientSelect: document.getElementById('recipient-select'),
+            messagesContainer: document.getElementById('messages-container'),
+            chatTitle: document.getElementById('chat-title'),
+            logoutBtn: document.getElementById('logout-btn'),
+            userName: document.getElementById('user-name')
+        };
+
+        // State management
+        let currentUser = null;
+        let activeTab = 'inbox'; // Default to inbox tab
+
         // Mobile menu toggle
-        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
+        function toggleMobileMenu() {
+            if (elements.navLinks) {
+                elements.navLinks.classList.toggle('active');
+            }
+        }
 
-        mobileMenuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-        });
+        if (elements.mobileMenuToggle) {
+            elements.mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+        }
 
-        // Close mobile menu when clicking on a link
+        // Close mobile menu when clicking a link
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
+                if (elements.navLinks) {
+                    elements.navLinks.classList.remove('active');
+                }
             });
         });
 
         // Toast notification function
         function showToast(message, type = 'success') {
+            // Remove existing toasts of the same type to prevent stacking
+            document.querySelectorAll(`.toast.${type}`).forEach(toast => toast.remove());
+            
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.textContent = message;
+            toast.innerHTML = message;
             document.body.appendChild(toast);
             
             setTimeout(() => {
-                toast.remove();
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // Check authentication
+        // Check authentication and ensure profile exists
         async function checkAuth() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (!user) {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    throw new Error(`Authentication error: ${error.message}`);
+                }
+                
+                if (!user) {
+                    showToast('Please log in to access the chat 😕', 'error');
+                    window.location.href = 'index.html';
+                    return null;
+                }
+
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .eq('id', user.id)
+                    .single();
+                    
+                if (profileError || !profile) {
+                    const { error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([{
+                            id: user.id,
+                            full_name: user.user_metadata?.full_name || user.email
+                        }]);
+                        
+                    if (insertError) {
+                        console.error('Error creating profile:', insertError);
+                        showToast('Error setting up profile 😕', 'error');
+                    }
+                }
+
+                if (elements.userName) {
+                    elements.userName.textContent = `Welcome, ${user.user_metadata?.full_name || user.email} 👋`;
+                }
+                
+                return user;
+            } catch (authError) {
+                console.error('Authentication error:', authError);
+                showToast('Authentication failed. Please log in again.', 'error');
                 window.location.href = 'index.html';
                 return null;
             }
-            
-            // Display user name
-            document.getElementById('user-name').textContent = 
-                `Welcome, ${user.user_metadata?.full_name || user.email}`;
-            return user;
         }
 
-        // Load messages
-        async function loadMessages() {
-            const { data: userData } = await supabase.auth.getUser();
-            const currentUserId = userData?.user?.id;
-            
-            const { data, error } = await supabase
-                .from('messages')
-                .select(`
-                    *,
-                    profiles(full_name)
-                `)
-                .order('created_at', { ascending: true });
-            
-            if (error) {
-                console.error('Error loading messages:', error);
-                showToast('Error loading messages', 'error');
-                return;
-            }
-            
-            const messagesContainer = document.getElementById('messages-container');
-            messagesContainer.innerHTML = '';
-            
-            if (data.length === 0) {
-                messagesContainer.innerHTML = '<p>No messages yet. Start the conversation! 😊</p>';
-                return;
-            }
-            
-            data.forEach(message => {
-                const messageEl = document.createElement('div');
-                messageEl.className = 'message';
-                
-                // Add delete button only for message owner
-                const deleteButton = currentUserId === message.user_id 
-                    ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
-                    : '';
-                
-                messageEl.innerHTML = `
-                    <div class="message-content">
-                        <strong>${message.profiles?.full_name || 'Unknown'}:</strong> ${message.content}
-                        <small>${new Date(message.created_at).toLocaleString()}</small>
-                    </div>
-                    ${deleteButton}
-                `;
-                messagesContainer.appendChild(messageEl);
-            });
-            
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            // Add event listeners for delete buttons
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', async () => {
-                    const messageId = button.getAttribute('data-id');
-                    if (confirm('Are you sure you want to delete this message?')) {
-                        await deleteMessage(messageId);
+        // Load users for recipient select
+        async function loadUsers() {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .order('full_name', { ascending: true });
+
+                if (error) {
+                    throw new Error(`Error loading users: ${error.message}`);
+                }
+
+                elements.recipientSelect.innerHTML = '<option value="">Select a recipient</option>';
+                data.forEach(user => {
+                    if (user.full_name) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name;
+                        elements.recipientSelect.appendChild(option);
                     }
                 });
-            });
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Error loading users 😕', 'error');
+            }
+        }
+
+        // Load community messages
+        async function loadCommunityMessages() {
+            try {
+                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages... ⏳</div>';
+
+                const { data: userData } = await supabase.auth.getUser();
+                const currentUserId = userData?.user?.id;
+
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select(`
+                        id,
+                        content,
+                        user_id,
+                        created_at,
+                        profiles!messages_user_id_fkey(full_name)
+                    `)
+                    .eq('is_private', false)
+                    .order('created_at', { ascending: true });
+
+                if (error) {
+                    throw new Error(`Error loading messages: ${error.message}`);
+                }
+
+                elements.messagesContainer.innerHTML = '';
+                if (data.length === 0) {
+                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start the conversation! 😊</div>';
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                
+                data.forEach(message => {
+                    const messageEl = document.createElement('div');
+                    messageEl.className = 'message';
+                    const deleteButton = currentUserId === message.user_id
+                        ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
+                        : '';
+
+                    messageEl.innerHTML = `
+                        <div class="message-content">
+                            <strong>${escapeHtml(message.profiles?.full_name || 'Unknown')}:</strong>
+                            <p>${escapeHtml(message.content)}</p>
+                            <small>${new Date(message.created_at).toLocaleString()}</small>
+                        </div>
+                        ${deleteButton}
+                    `;
+                    fragment.appendChild(messageEl);
+                });
+
+                elements.messagesContainer.appendChild(fragment);
+                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', async () => {
+                        if (confirm('Are you sure you want to delete this message?')) {
+                            await deleteMessage(button.getAttribute('data-id'));
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading community messages:', error);
+                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+                showToast('Error loading messages 😕', 'error');
+            }
+        }
+
+        // Load inbox conversations
+        async function loadInboxConversations() {
+            try {
+                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading conversations... ⏳</div>';
+
+                const { data: userData } = await supabase.auth.getUser();
+                const currentUserId = userData?.user?.id;
+
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select(`
+                        id,
+                        content,
+                        user_id,
+                        recipient_id,
+                        created_at,
+                        profiles!messages_user_id_fkey(full_name)
+                    `)
+                    .eq('is_private', true)
+                    .or(`user_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw new Error(`Error loading conversations: ${error.message}`);
+                }
+
+                elements.messagesContainer.innerHTML = '';
+                if (data.length === 0) {
+                    elements.messagesContainer.innerHTML = '<div class="no-messages">No conversations yet. Start a private chat! 📩</div>';
+                    return;
+                }
+
+                const conversations = {};
+                data.forEach(message => {
+                    const otherUserId = message.user_id === currentUserId ? message.recipient_id : message.user_id;
+                    if (!conversations[otherUserId]) {
+                        conversations[otherUserId] = {
+                            full_name: message.profiles?.full_name || 'Unknown',
+                            messages: []
+                        };
+                    }
+                    conversations[otherUserId].messages.push(message);
+                });
+
+                const fragment = document.createDocumentFragment();
+                
+                Object.entries(conversations).forEach(([userId, convo]) => {
+                    const latestMessage = convo.messages[0];
+                    const conversationEl = document.createElement('div');
+                    conversationEl.className = 'conversation';
+                    conversationEl.setAttribute('data-user-id', userId);
+                    conversationEl.innerHTML = `
+                        <div class="conversation-header">
+                            <div class="conversation-avatar">${escapeHtml(convo.full_name.charAt(0).toUpperCase())}</div>
+                            <div class="conversation-details">
+                                <div class="conversation-name">${escapeHtml(convo.full_name)}</div>
+                                <div class="conversation-preview">${escapeHtml(latestMessage.content)}</div>
+                            </div>
+                        </div>
+                    `;
+                    fragment.appendChild(conversationEl);
+
+                    conversationEl.addEventListener('click', () => {
+                        elements.recipientSelect.value = userId;
+                        loadPrivateMessages(userId, convo.full_name);
+                    });
+                });
+
+                elements.messagesContainer.appendChild(fragment);
+            } catch (error) {
+                console.error('Error loading inbox conversations:', error);
+                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+                showToast('Error loading conversations 😕', 'error');
+            }
+        }
+
+        // Load private messages for a specific user
+        async function loadPrivateMessages(recipientId, recipientName) {
+            try {
+                elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages... ⏳</div>';
+
+                const { data: userData } = await supabase.auth.getUser();
+                const currentUserId = userData?.user?.id;
+
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select(`
+                        id,
+                        content,
+                        user_id,
+                        created_at,
+                        profiles!messages_user_id_fkey(full_name)
+                    `)
+                    .eq('is_private', true)
+                    .or(`and(user_id.eq.${currentUserId},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUserId})`)
+                    .order('created_at', { ascending: true });
+
+                if (error) {
+                    throw new Error(`Error loading private messages: ${error.message}`);
+                }
+
+                if (elements.chatTitle) {
+                    elements.chatTitle.textContent = `Chat with ${recipientName} 📩`;
+                }
+                if (elements.recipientSelect) {
+                    elements.recipientSelect.value = recipientId;
+                }
+
+                elements.messagesContainer.innerHTML = '';
+
+                if (data.length === 0) {
+                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start the conversation! 😊</div>';
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                
+                data.forEach(message => {
+                    const messageEl = document.createElement('div');
+                    messageEl.className = 'message';
+                    const deleteButton = currentUserId === message.user_id
+                        ? `<button class="delete-btn" data-id="${message.id}">🗑️</button>`
+                        : '';
+
+                    messageEl.innerHTML = `
+                        <div class="message-content">
+                            <strong>${escapeHtml(message.profiles?.full_name || 'Unknown')}:</strong>
+                            <p>${escapeHtml(message.content)}</p>
+                            <small>${new Date(message.created_at).toLocaleString()}</small>
+                        </div>
+                        ${deleteButton}
+                    `;
+                    fragment.appendChild(messageEl);
+                });
+
+                elements.messagesContainer.appendChild(fragment);
+                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', async () => {
+                        if (confirm('Are you sure you want to delete this message?')) {
+                            await deleteMessage(button.getAttribute('data-id'));
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading private messages:', error);
+                elements.messagesContainer.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+                showToast('Error loading messages 😕', 'error');
+            }
         }
 
         // Delete message
         async function deleteMessage(messageId) {
-            const { error } = await supabase
-                .from('messages')
-                .delete()
-                .eq('id', messageId);
-            
-            if (error) {
-                showToast('Error deleting message: ' + error.message, 'error');
-            } else {
-                showToast('Message deleted successfully! 🗑️');
-                loadMessages();
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .delete()
+                    .eq('id', messageId);
+
+                if (error) {
+                    throw new Error(`Error deleting message: ${error.message}`);
+                }
+
+                showToast('Message deleted successfully 🗑️');
+                
+                if (activeTab === 'community') {
+                    loadCommunityMessages();
+                } else {
+                    const recipientId = elements.recipientSelect.value;
+                    if (recipientId) {
+                        const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
+                        loadPrivateMessages(recipientId, recipientName);
+                    } else {
+                        loadInboxConversations();
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showToast(error.message, 'error');
             }
         }
 
         // Send a message
-        document.getElementById('message-form').addEventListener('submit', async (e) => {
+        elements.messageForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const user = await checkAuth();
-            if (!user) return;
-            
-            const content = document.getElementById('message-input').value;
-            
-            const { data, error } = await supabase
-                .from('messages')
-                .insert([{
+
+            try {
+                const user = await checkAuth();
+                if (!user) return;
+
+                const content = elements.messageInput.value.trim();
+                const recipientId = elements.recipientSelect.value;
+                const isPrivate = activeTab === 'inbox' && recipientId;
+
+                if (!content) {
+                    showToast('Please enter a message', 'error');
+                    return;
+                }
+
+                if (isPrivate && !recipientId) {
+                    showToast('Please select a recipient for private messages 📩', 'error');
+                    return;
+                }
+
+                const messageData = {
                     content,
-                    user_id: user.id
-                }]);
-            
-            if (error) {
-                showToast('Error sending message: ' + error.message, 'error');
-            } else {
-                document.getElementById('message-input').value = '';
-                loadMessages();
+                    user_id: user.id,
+                    is_private: isPrivate
+                };
+
+                if (isPrivate) {
+                    messageData.recipient_id = recipientId;
+                }
+
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([messageData]);
+
+                if (error) {
+                    throw new Error(`Error sending message: ${error.message}`);
+                }
+
+                elements.messageInput.value = '';
+                
+                if (isPrivate) {
+                    const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
+                    loadPrivateMessages(recipientId, recipientName);
+                } else {
+                    loadCommunityMessages();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showToast(error.message, 'error');
             }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                activeTab = button.getAttribute('data-tab');
+                
+                if (elements.chatTitle) {
+                    elements.chatTitle.textContent = activeTab === 'community' ? 'Community Chat 💬' : 'Inbox 📩';
+                }
+                
+                if (elements.recipientSelect) {
+                    elements.recipientSelect.classList.toggle('hidden', activeTab === 'community');
+                    if (activeTab === 'community') {
+                        elements.recipientSelect.value = '';
+                    }
+                }
+
+                if (activeTab === 'community') {
+                    loadCommunityMessages();
+                } else {
+                    loadInboxConversations();
+                }
+            });
         });
 
         // Logout
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            showToast('👋 Logged out successfully');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
+        elements.logoutBtn?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                showToast('Logging out...', 'warning');
+                await supabase.auth.signOut();
+                showToast('👋 Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Error logging out. Please try again.', 'error');
+            }
         });
 
-        // Initialize
-        checkAuth().then(async (user) => {
-            if (!user) return;
-            
-            // Check if we're coming from a product page
-            const sellerId = sessionStorage.getItem('chatSellerId');
-            const sellerName = sessionStorage.getItem('chatSellerName');
-            const productTitle = sessionStorage.getItem('chatProductTitle');
-            
-            if (sellerId && sellerName && productTitle) {
-                // Update chat title
-                document.getElementById('chat-title').textContent = `Chat with ${sellerName} about: ${productTitle}`;
-                
-                // Pre-fill message input
-                document.getElementById('message-input').value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
-                
-                // Clear sessionStorage
-                sessionStorage.removeItem('chatSellerId');
-                sessionStorage.removeItem('chatSellerName');
-                sessionStorage.removeItem('chatProductTitle');
+        // Initialize app
+        async function initApp() {
+            try {
+                currentUser = await checkAuth();
+                if (!currentUser) return;
+
+                await loadUsers();
+
+                const sellerId = sessionStorage.getItem('chatSellerId');
+                const sellerName = sessionStorage.getItem('chatSellerName');
+                const productTitle = sessionStorage.getItem('chatProductTitle');
+
+                if (sellerId && sellerName && productTitle) {
+                    const inboxTab = document.querySelector('.tab-btn[data-tab="inbox"]');
+                    const communityTab = document.querySelector('.tab-btn[data-tab="community"]');
+                    
+                    if (inboxTab) inboxTab.classList.add('active');
+                    if (communityTab) communityTab.classList.remove('active');
+                    
+                    activeTab = 'inbox';
+                    
+                    if (elements.chatTitle) {
+                        elements.chatTitle.textContent = `Chat with ${sellerName} about: ${productTitle} 📩`;
+                    }
+                    
+                    if (elements.recipientSelect) {
+                        elements.recipientSelect.value = sellerId;
+                        elements.recipientSelect.classList.remove('hidden');
+                    }
+                    
+                    if (elements.messageInput) {
+                        elements.messageInput.value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
+                    }
+                    
+                    await loadPrivateMessages(sellerId, sellerName);
+
+                    sessionStorage.removeItem('chatSellerId');
+                    sessionStorage.removeItem('chatSellerName');
+                    sessionStorage.removeItem('chatProductTitle');
+                } else {
+                    const inboxTab = document.querySelector('.tab-btn[data-tab="inbox"]');
+                    if (inboxTab) inboxTab.classList.add('active');
+                    elements.recipientSelect.classList.remove('hidden');
+                    loadInboxConversations();
+                }
+
+                supabase
+                    .channel('messages')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+                        if (activeTab === 'community') {
+                            loadCommunityMessages();
+                        } else {
+                            const recipientId = elements.recipientSelect.value;
+                            if (recipientId) {
+                                const recipientName = elements.recipientSelect.options[elements.recipientSelect.selectedIndex]?.textContent || 'User';
+                                loadPrivateMessages(recipientId, recipientName);
+                            } else {
+                                loadInboxConversations();
+                            }
+                        }
+                    })
+                    .subscribe();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showToast('Failed to initialize the chat. Please refresh the page.', 'error');
             }
-            
-            loadMessages();
-            
-            // Real-time subscription for new messages and deletions
-            supabase
-                .channel('messages')
-                .on('postgres_changes', { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'messages' 
-                }, payload => {
-                    loadMessages();
-                })
-                .subscribe();
-        });
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize app when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>

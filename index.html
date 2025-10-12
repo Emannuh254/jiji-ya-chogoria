@@ -1,312 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🛍️ Jiji ya Chogoria - Login / Signup</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
-<style>
-/* 🌙 Dark Orange Theme - Sleek, Modern & Mobile-Friendly */
-:root {
-  --bg: #000;
-  --card: #121111;
-  --accent1: #ff6b35;
-  --accent2: #ff8c42;
-  --text: #fff;
-  --subtext: #aaa;
-  --error: #ff4b4b;
-  --success: #4caf50;
-  --radius: 14px;
-  --shadow: 0 0 20px rgba(0, 0, 0, 0.25);
-  --transition: all 0.3s ease;
-}
-* {
-  margin: 0; padding: 0; box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
-body {
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  padding: 1.2rem;
-}
-header {
-  margin-bottom: 1.5rem;
-  animation: fadeIn 1.2s ease;
-}
-header h1 {
-  font-size: 2rem;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-header p {
-  color: var(--subtext);
-  font-size: 1rem;
-}
-.form-container {
-  background: var(--card);
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  width: 100%;
-  max-width: 380px;
-  box-shadow: var(--shadow);
-  animation: fadeInUp 1s ease;
-}
-.hidden { display: none; }
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛍️ Jiji ya Chogoria - Login / Signup</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* 🌙 Dark Orange Theme - Sleek, Modern & Mobile-Friendly */
+      :root {
+        --bg: #000;
+        --card: #121111;
+        --accent1: #ff6b35;
+        --accent2: #ff8c42;
+        --text: #fff;
+        --subtext: #aaa;
+        --error: #ff4b4b;
+        --success: #4caf50;
+        --radius: 14px;
+        --shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+        --transition: all 0.3s ease;
+      }
+      * {
+        margin: 0; padding: 0; box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 1.2rem;
+      }
+      header {
+        margin-bottom: 1.5rem;
+        animation: fadeIn 1.2s ease;
+      }
+      header h1 {
+        font-size: 2rem;
+        background: linear-gradient(135deg, var(--accent1), var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      header p {
+        color: var(--subtext);
+        font-size: 1rem;
+      }
+      .form-container {
+        background: var(--card);
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 380px;
+        box-shadow: var(--shadow);
+        animation: fadeInUp 1s ease;
+      }
+      .hidden { display: none; }
 
-h2 {
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-size: 1.6rem;
-  margin-bottom: 1rem;
-}
+      h2 {
+        background: linear-gradient(135deg, var(--accent1), var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+      }
 
-input {
-  width: 100%;
-  padding: 0.9rem;
-  margin: 0.5rem 0;
-  border: none;
-  border-radius: var(--radius);
-  background: #1a1a1a;
-  color: var(--text);
-  font-size: 1rem;
-  transition: var(--transition);
-}
-input:focus {
-  background: #222;
-  outline: 2px solid var(--accent1);
-}
+      input {
+        width: 100%;
+        padding: 0.9rem;
+        margin: 0.5rem 0;
+        border: none;
+        border-radius: var(--radius);
+        background: #1a1a1a;
+        color: var(--text);
+        font-size: 1rem;
+        transition: var(--transition);
+      }
+      input:focus {
+        background: #222;
+        outline: 2px solid var(--accent1);
+      }
 
-button {
-  width: 100%;
-  padding: 0.9rem;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  border: none;
-  color: #fff;
-  font-weight: bold;
-  border-radius: 30px;
-  margin-top: 0.6rem;
-  font-size: 1.05rem;
-  transition: var(--transition);
-}
-button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
-}
+      button {
+        width: 100%;
+        padding: 0.9rem;
+        background: linear-gradient(135deg, var(--accent1), var(--accent2));
+        border: none;
+        color: #fff;
+        font-weight: bold;
+        border-radius: 30px;
+        margin-top: 0.6rem;
+        font-size: 1.05rem;
+        transition: var(--transition);
+      }
+      button:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
+      }
 
-.form-toggle p {
-  color: var(--subtext);
-  margin-top: 1rem;
-  font-size: 0.95rem;
-}
-.form-toggle a {
-  color: var(--accent1);
-  cursor: pointer;
-  font-weight: 600;
-}
+      .form-toggle p {
+        color: var(--subtext);
+        margin-top: 1rem;
+        font-size: 0.95rem;
+      }
+      .form-toggle a {
+        color: var(--accent1);
+        cursor: pointer;
+        font-weight: 600;
+      }
 
-.toast {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1a1a1a;
-  padding: 1rem 1.5rem;
-  border-radius: 20px;
-  font-size: 1rem;
-  color: #fff;
-  opacity: 0.95;
-  box-shadow: var(--shadow);
-  animation: fadeInUp 0.5s ease;
-  z-index: 9999;
-}
-.toast.success { border-left: 5px solid var(--success); }
-.toast.error { border-left: 5px solid var(--error); }
+      .toast {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        padding: 1rem 1.5rem;
+        border-radius: 20px;
+        font-size: 1rem;
+        color: #fff;
+        opacity: 0.95;
+        box-shadow: var(--shadow);
+        animation: fadeInUp 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+        z-index: 9999;
+      }
+      .toast.success { border-left: 5px solid var(--success); }
+      .toast.error { border-left: 5px solid var(--error); }
 
-.loading-spinner {
-  border: 4px solid #333;
-  border-top: 4px solid var(--accent1);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 1rem auto;
-}
+      .loading-spinner {
+        border: 4px solid #333;
+        border-top: 4px solid var(--accent1);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 1rem auto;
+      }
 
-@keyframes spin { 0% {transform: rotate(0);} 100% {transform: rotate(360deg);} }
-@keyframes fadeInUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+      @keyframes spin { 0% {transform: rotate(0);} 100% {transform: rotate(360deg);} }
+      @keyframes fadeInUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+      @keyframes fadeOut { to {opacity: 0;} }
 
-footer {
-  margin-top: 1.5rem;
-  color: var(--subtext);
-  font-size: 0.9rem;
-}
+      footer {
+        margin-top: 1.5rem;
+        color: var(--subtext);
+        font-size: 0.9rem;
+      }
 
-@media (max-width: 480px) {
-  header h1 { font-size: 1.7rem; }
-  h2 { font-size: 1.4rem; }
-  .form-container { padding: 1.2rem; border-radius: 10px; }
-  input, button { font-size: 1rem; padding: 0.85rem; }
-}
-</style>
-</head>
+      @media (max-width: 480px) {
+        header h1 { font-size: 1.7rem; }
+        h2 { font-size: 1.4rem; }
+        .form-container { padding: 1.2rem; border-radius: 10px; }
+        input, button { font-size: 1rem; padding: 0.85rem; }
+      }
+    </style>
+  </head>
 
-<body>
-  <header>
-    <h1>🛒 Jiji ya Chogoria</h1>
-    <p>Your Local Marketplace ✨</p>
-  </header>
+  <body>
+    <header>
+      <h1>🛒 Jiji ya Chogoria</h1>
+      <p>Your Local Marketplace ✨</p>
+    </header>
 
-  <main>
-    <div class="form-container">
-      <!-- Login -->
-      <div id="login-section">
-        <h2>🔑 Login</h2>
-        <div id="loading" class="hidden loading-spinner"></div>
-        <form id="login-form">
-          <input type="email" id="login-email" placeholder="📧 Email" required>
-          <input type="password" id="login-password" placeholder="🔒 Password" required>
-          <button type="submit">Login 🚀</button>
-        </form>
-        <div class="form-toggle">
-          <p>Don't have an account? <a id="show-signup">Sign Up</a></p>
-          <p><a id="show-forgot">Forgot Password?</a></p>
+    <main>
+      <div class="form-container">
+        <!-- Login -->
+        <div id="login-section">
+          <h2>🔑 Login</h2>
+          <div id="loading" class="hidden loading-spinner"></div>
+          <form id="login-form">
+            <input type="email" id="login-email" placeholder="📧 Email" required>
+            <input type="password" id="login-password" placeholder="🔒 Password" required>
+            <button type="submit">Login 🚀</button>
+          </form>
+          <div class="form-toggle">
+            <p>Don't have an account? <a id="show-signup">Sign Up</a></p>
+            <p><a id="show-forgot">Forgot Password?</a></p>
+          </div>
+        </div>
+
+        <!-- Signup -->
+        <div id="signup-section" class="hidden">
+          <h2>🧍‍♂️ Signup</h2>
+          <form id="signup-form">
+            <input type="text" id="signup-name" placeholder="👤 Full Name" required>
+            <input type="email" id="signup-email" placeholder="📧 Email" required>
+            <input type="password" id="signup-password" placeholder="🔒 Password" required>
+            <button type="submit">Sign Up 🎉</button>
+          </form>
+          <div class="form-toggle">
+            <p>Already have an account? <a id="show-login">Log In</a></p>
+          </div>
+        </div>
+
+        <!-- Forgot Password -->
+        <div id="forgot-section" class="hidden">
+          <h2>🔁 Reset Password</h2>
+          <form id="forgot-form">
+            <input type="email" id="forgot-email" placeholder="📧 Enter your email" required>
+            <button type="submit">Send Reset Link 📩</button>
+          </form>
+          <div class="form-toggle">
+            <p>Remembered? <a id="show-login-2">Go Back</a></p>
+          </div>
         </div>
       </div>
+    </main>
 
-      <!-- Signup -->
-      <div id="signup-section" class="hidden">
-        <h2>🧍‍♂️ Signup</h2>
-        <form id="signup-form">
-          <input type="text" id="signup-name" placeholder="👤 Full Name" required>
-          <input type="email" id="signup-email" placeholder="📧 Email" required>
-          <input type="password" id="signup-password" placeholder="🔒 Password" required>
-          <button type="submit">Sign Up 🎉</button>
-        </form>
-        <div class="form-toggle">
-          <p>Already have an account? <a id="show-login">Log In</a></p>
-        </div>
-      </div>
+    <footer>
+      <p>© 2025 <b>KHAMIC.inc</b></p>
+    </footer>
 
-      <!-- Forgot Password -->
-      <div id="forgot-section" class="hidden">
-        <h2>🔁 Reset Password</h2>
-        <form id="forgot-form">
-          <input type="email" id="forgot-email" placeholder="📧 Enter your email" required>
-          <button type="submit">Send Reset Link 📩</button>
-        </form>
-        <div class="form-toggle">
-          <p>Remembered? <a id="show-login-2">Go Back</a></p>
-        </div>
-      </div>
-    </div>
-  </main>
+    <script>
+      // Check if Supabase is loaded
+      if (!window.supabase) {
+        document.body.innerHTML = '<div class="toast error">❌ Failed to load Supabase. Please check your network and refresh.</div>';
+        throw new Error('Supabase script not loaded');
+      }
 
-  <footer>
-    <p>© 2025 <b>KHAMIC.inc</b></p>
-  </footer>
-
-  <script>
-        const supabase = window.supabase.createClient(
+      const supabase = window.supabase.createClient(
         'https://lrezerxsbuekkhmpverr.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g'
-        );
+      );
 
-        const loginSection = document.getElementById('login-section');
-        const signupSection = document.getElementById('signup-section');
-        const forgotSection = document.getElementById('forgot-section');
-        const loading = document.getElementById('loading');
+      const loginSection = document.getElementById('login-section');
+      const signupSection = document.getElementById('signup-section');
+      const forgotSection = document.getElementById('forgot-section');
+      const loading = document.getElementById('loading');
 
-        function showToast(msg, type = 'success') {
+      function showToast(msg, type = 'success') {
+        // Remove existing toasts
+        document.querySelectorAll('.toast').forEach(toast => toast.remove());
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.textContent = msg;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
-        }
+      }
 
-        // Toggle sections
-        document.getElementById('show-signup').addEventListener('click', () => {
+      // Validate email format
+      function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      // Toggle sections
+      document.getElementById('show-signup').addEventListener('click', () => {
         loginSection.classList.add('hidden');
         signupSection.classList.remove('hidden');
-        });
-        document.getElementById('show-login').addEventListener('click', () => {
+        loading.classList.add('hidden');
+      });
+      document.getElementById('show-login').addEventListener('click', () => {
         signupSection.classList.add('hidden');
         forgotSection.classList.add('hidden');
         loginSection.classList.remove('hidden');
-        });
-        document.getElementById('show-forgot').addEventListener('click', () => {
+        loading.classList.add('hidden');
+      });
+      document.getElementById('show-forgot').addEventListener('click', () => {
         loginSection.classList.add('hidden');
         forgotSection.classList.remove('hidden');
-        });
-        document.getElementById('show-login-2').addEventListener('click', () => {
+        loading.classList.add('hidden');
+      });
+      document.getElementById('show-login-2').addEventListener('click', () => {
         forgotSection.classList.add('hidden');
         loginSection.classList.remove('hidden');
-        });
-
-        // 🔐 Login
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        loading.classList.remove('hidden');
-        
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
         loading.classList.add('hidden');
+      });
 
-        if (error) return showToast('❌ ' + error.message, 'error');
-        showToast('✅ Login successful!');
-        setTimeout(() => window.location.href = 'dashboard.html', 1200);
-        });
-
-        // 🆕 Signup
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      // 🔐 Login
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = document.getElementById('signup-name').value;
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+
+        if (!isValidEmail(email)) {
+          showToast('❌ Please enter a valid email address', 'error');
+          return;
+        }
+        if (!password) {
+          showToast('❌ Please enter a password', 'error');
+          return;
+        }
 
         loading.classList.remove('hidden');
-        const { error } = await supabase.auth.signUp({
+        try {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          loading.classList.add('hidden');
+          if (error) {
+            showToast(`❌ ${error.message}`, 'error');
+            return;
+          }
+          showToast('✅ Login successful!');
+          setTimeout(() => window.location.href = 'dashboard.html', 1200);
+        } catch (err) {
+          loading.classList.add('hidden');
+          showToast('❌ An unexpected error occurred', 'error');
+        }
+      });
+
+      // 🆕 Signup
+      document.getElementById('signup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const password = document.getElementById('signup-password').value.trim();
+
+        if (!name) {
+          showToast('❌ Please enter your full name', 'error');
+          return;
+        }
+        if (!isValidEmail(email)) {
+          showToast('❌ Please enter a valid email address', 'error');
+          return;
+        }
+        if (password.length < 6) {
+          showToast('❌ Password must be at least 6 characters', 'error');
+          return;
+        }
+
+        loading.classList.remove('hidden');
+        try {
+          const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-            data: { full_name: name },
-            emailRedirectTo: "https://emannuh254.github.io/jiji-ya-chogoria/dashboard.html"
+              data: { full_name: name },
+              emailRedirectTo: "https://emannuh254.github.io/jiji-ya-chogoria/dashboard.html"
             }
-        });
-        loading.classList.add('hidden');
+          });
+          loading.classList.add('hidden');
+          if (error) {
+            showToast(`❌ ${error.message}`, 'error');
+            return;
+          }
+          showToast('📧 Account created! Check your email to verify.');
+          signupSection.classList.add('hidden');
+          loginSection.classList.remove('hidden');
+        } catch (err) {
+          loading.classList.add('hidden');
+          showToast('❌ An unexpected error occurred', 'error');
+        }
+      });
 
-        if (error) return showToast('❌ ' + error.message, 'error');
-        showToast('📧 Account created! Check your email to verify.');
-        signupSection.classList.add('hidden');
-        loginSection.classList.remove('hidden');
-        });
-
-        // 🔁 Forgot password
-        document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+      // 🔁 Forgot password
+      document.getElementById('forgot-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('forgot-email').value;
-        loading.classList.remove('hidden');
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://emannuh254.github.io/jiji-ya-chogoria/reset.html'
-        });
+        const email = document.getElementById('forgot-email').value.trim();
 
-        loading.classList.add('hidden');
-        if (error) return showToast('❌ ' + error.message, 'error');
-        showToast('📩 Password reset link sent! Check your email.');
-        forgotSection.classList.add('hidden');
-        loginSection.classList.remove('hidden');
-        });
- </script>
-</body>
+        if (!isValidEmail(email)) {
+          showToast('❌ Please enter a valid email address', 'error');
+          return;
+        }
+
+        loading.classList.remove('hidden');
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://emannuh254.github.io/jiji-ya-chogoria/reset.html'
+          });
+          loading.classList.add('hidden');
+          if (error) {
+            showToast(`❌ ${error.message}`, 'error');
+            return;
+          }
+          showToast('📩 Password reset link sent! Check your email.');
+          forgotSection.classList.add('hidden');
+          loginSection.classList.remove('hidden');
+        } catch (err) {
+          loading.classList.add('hidden');
+          showToast('❌ An unexpected error occurred', 'error');
+        }
+      });
+    </script>
+  </body>
 </html>

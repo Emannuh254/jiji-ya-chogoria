@@ -3,40 +3,48 @@
 <head>
     <title>Jiji ya Chogoria - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <h1>Jiji ya Chogoria - Product Marketplace</h1>
+    <header>
+        <div class="container">
+            <h1>Jiji ya Chogoria</h1>
+        </div>
+    </header>
     
-    <div id="user-info">
-        <span id="user-name"></span>
-        <button id="chat-btn">Go to Chat</button>
-        <button id="settings-btn">Settings</button>
-        <button id="logout-btn">Logout</button>
-    </div>
-    
-    <!-- Product Posting Section -->
-    <div id="product-section">
-        <h2>Post a New Product</h2>
-        <form id="product-form">
-            <input type="text" id="product-title" placeholder="Product Title" required>
-            <textarea id="product-description" placeholder="Product Description" required></textarea>
-            <input type="number" id="product-price" placeholder="Price (KES)" required>
-            <select id="product-status">
-                <option value="in_stock">In Stock</option>
-                <option value="sold">Sold</option>
-                <option value="reserved">Reserved</option>
-            </select>
-            <button type="submit">Post Product</button>
-        </form>
-    </div>
-    
-    <!-- Products Display -->
-    <div id="products-container">
-        <h2>Available Products</h2>
-        <div id="products-list"></div>
-    </div>
+    <main class="container">
+        <div id="user-info">
+            <span id="user-name"></span>
+            <button id="chat-btn">Go to Chat</button>
+            <button id="settings-btn">Settings</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+        
+        <div id="product-section">
+            <h2>Post a New Product</h2>
+            <form id="product-form">
+                <input type="text" id="product-title" placeholder="Product Title" required>
+                <textarea id="product-description" placeholder="Product Description" required></textarea>
+                <input type="number" id="product-price" placeholder="Price (KES)" required>
+                <select id="product-status">
+                    <option value="in_stock">In Stock</option>
+                    <option value="sold">Sold</option>
+                    <option value="reserved">Reserved</option>
+                </select>
+                <button type="submit">Post Product</button>
+            </form>
+        </div>
+        
+        <div id="products-container">
+            <h2>Available Products</h2>
+            <div id="products-list"></div>
+        </div>
+    </main>
+
     <footer>
-        <p>&copy; 2025 Jiji ya Chogoria  by mannuh. All rights reserved.</p>
+        <div class="container">
+            <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>
+        </div>
     </footer>
 
     <script>
@@ -44,6 +52,18 @@
         const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
 
         // Check authentication and ensure profile exists
         async function checkAuth() {
@@ -112,13 +132,12 @@
                     <h3>${product.title}</h3>
                     <p>${product.description}</p>
                     <p><strong>Price:</strong> KES ${product.price}</p>
-                    <p><strong>Status:</strong> <span class="${statusClass}">${product.status.replace('_', ' ').toUpperCase()}</span></p>
+                    <p><strong>Status:</strong> <span class="status-indicator ${statusClass}">${product.status.replace('_', ' ').toUpperCase()}</span></p>
                     <p><strong>Seller:</strong> ${product.profiles?.full_name || 'Unknown'}</p>
                     <p><strong>Posted:</strong> ${new Date(product.created_at).toLocaleString()}</p>
                     <button class="chat-seller-btn" data-seller-id="${product.user_id}" data-seller-name="${product.profiles?.full_name || 'Seller'}" data-product-title="${product.title}">
                         Chat with Seller
                     </button>
-                    <hr>
                 `;
                 productsList.appendChild(productEl);
             });
@@ -164,9 +183,9 @@
                 }]);
             
             if (error) {
-                alert('Error posting product: ' + error.message);
+                showToast('Error posting product: ' + error.message, 'error');
             } else {
-                alert('Product posted successfully!');
+                showToast('Product posted successfully!');
                 document.getElementById('product-form').reset();
                 loadProducts();
             }
@@ -175,7 +194,10 @@
         // Logout
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await supabase.auth.signOut();
-            window.location.href = 'index.html';
+            showToast('Logged out successfully');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
         });
 
         // Navigate to chat

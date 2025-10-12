@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 <title>🛍️ Jiji ya Chogoria - Login / Signup</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
 <style>
-/* 🌙 Dark Orange Theme - Sleek & Modern */
+/* 🌙 Dark Orange Theme - Sleek, Modern & Mobile-Friendly */
 :root {
   --bg: #000;
   --card: #111;
@@ -35,26 +35,27 @@ body {
   text-align: center;
   overflow-x: hidden;
   transition: var(--transition);
+  padding: 1.2rem;
 }
 header {
   margin-bottom: 1.5rem;
   animation: fadeIn 1.2s ease;
 }
 header h1 {
-  font-size: 2.4rem;
+  font-size: 2rem;
   background: linear-gradient(135deg, var(--accent1), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 header p {
   color: var(--subtext);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 .form-container {
   background: var(--card);
-  padding: 1.8rem;
+  padding: 1.5rem;
   border-radius: var(--radius);
-  width: 90%;
+  width: 100%;
   max-width: 380px;
   box-shadow: var(--shadow);
   transition: var(--transition);
@@ -66,7 +67,7 @@ h2 {
   background: linear-gradient(135deg, var(--accent1), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   margin-bottom: 1rem;
 }
 
@@ -88,14 +89,14 @@ input:focus {
 
 button {
   width: 100%;
-  padding: 1rem;
+  padding: 0.9rem;
   background: linear-gradient(135deg, var(--accent1), var(--accent2));
   border: none;
   color: #fff;
   font-weight: bold;
   border-radius: 30px;
   margin-top: 0.6rem;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   transition: var(--transition);
 }
 button:hover {
@@ -133,6 +134,7 @@ button:hover {
   opacity: 0.95;
   box-shadow: var(--shadow);
   animation: fadeInUp 0.5s ease;
+  z-index: 9999;
 }
 .toast.success { border-left: 5px solid var(--success); }
 .toast.error { border-left: 5px solid var(--error); }
@@ -158,8 +160,17 @@ footer {
   color: var(--subtext);
   font-size: 0.9rem;
 }
-  </style>
+
+/* 📱 Mobile Improvements */
+@media (max-width: 480px) {
+  header h1 { font-size: 1.7rem; }
+  h2 { font-size: 1.4rem; }
+  .form-container { padding: 1.2rem; border-radius: 10px; }
+  input, button { font-size: 1rem; padding: 0.85rem; }
+}
+</style>
 </head>
+
 <body>
   <header>
     <h1>🛒 Jiji ya Chogoria</h1>
@@ -168,6 +179,7 @@ footer {
 
   <main>
     <div class="form-container" id="auth-container">
+      <!-- Login Section -->
       <div id="login-section">
         <h2>🔑 Login</h2>
         <div id="loading" class="hidden loading-spinner"></div>
@@ -181,6 +193,7 @@ footer {
         </div>
       </div>
 
+      <!-- Signup Section -->
       <div id="signup-section" class="hidden">
         <h2>🧍‍♂️ Signup</h2>
         <form id="signup-form">
@@ -199,7 +212,7 @@ footer {
   </main>
 
   <footer>
-    <p>© 2025 <b>Mannuh</b> — Built with ❤️ in Chogoria</p>
+    <p>© 2025 <b>KHAMIC.inc</b></p>
   </footer>
 
   <script>
@@ -211,51 +224,65 @@ footer {
     const signupSection = document.getElementById('signup-section');
     const loading = document.getElementById('loading');
 
-    function showToast(msg, type='success') {
+    // 🌟 Toast Notification
+    function showToast(msg, type = 'success') {
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
       toast.textContent = msg;
       document.body.appendChild(toast);
-      setTimeout(()=> toast.remove(), 3000);
+      setTimeout(() => toast.remove(), 3000);
     }
 
+    // 🌀 Switch Sections
     document.getElementById('show-signup').addEventListener('click', () => {
       loginSection.classList.add('hidden');
       signupSection.classList.remove('hidden');
     });
-
     document.getElementById('show-login').addEventListener('click', () => {
       signupSection.classList.add('hidden');
       loginSection.classList.remove('hidden');
     });
 
-    // Login
-    document.getElementById('login-form').addEventListener('submit', async (e)=>{
+    // 🔑 Login
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       loading.classList.remove('hidden');
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       loading.classList.add('hidden');
-      if(error) return showToast('❌ '+error.message, 'error');
+
+      if (error) return showToast('❌ ' + error.message, 'error');
+
       showToast('✅ Login Successful!');
-      setTimeout(()=> window.location.href='dashboard.html', 1200);
+      setTimeout(() => (window.location.href = 'dashboard.html'), 1200);
     });
 
-    // Signup
-    document.getElementById('signup-form').addEventListener('submit', async (e)=>{
+    // 🧍‍♂️ Signup
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
-      const password = document.getElementById('signup-password').value;
       loading.classList.remove('hidden');
+
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value.trim();
+
       const { data, error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { full_name: name }, emailRedirectTo: window.location.origin }
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+          emailRedirectTo: 'https://emannuh254.github.io/jiji-ya-chogoria/dashboard'
+        }
       });
+
       loading.classList.add('hidden');
-      if(error) return showToast('❌ '+error.message, 'error');
-      showToast('📧 Account created! Verify your email.');
+
+      if (error) return showToast('❌ ' + error.message, 'error');
+
+      showToast('📧 Account created! Check your email to verify.');
       signupSection.classList.add('hidden');
       loginSection.classList.remove('hidden');
     });

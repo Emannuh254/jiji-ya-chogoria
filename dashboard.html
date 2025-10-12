@@ -30,7 +30,9 @@
         
         <div id="products-container">
             <h2>Available Products</h2>
-            <div id="products-list"></div>
+            <div id="products-list">
+                <div class="loading-spinner">Loading products...</div>
+            </div>
         </div>
     </main>
 
@@ -41,164 +43,174 @@
     </footer>
 
     <script>
-        // Initialize Supabase
-        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase
+    const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Mobile menu toggle
-        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
 
-        mobileMenuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
+    mobileMenuToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+    });
+
+    // Close mobile menu when clicking on a link
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
         });
+    });
 
-        // Close mobile menu when clicking on a link
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-            });
-        });
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
 
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Check authentication and ensure profile exists
+    async function checkAuth() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = 'index.html';
+            return null;
         }
 
-        // Check authentication and ensure profile exists
-        async function checkAuth() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
-            // Check if profile exists, create if not
-            const { data: profile, error: profileError } = await supabase
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile) {
+            // Create profile if it doesn’t exist
+            const { error: insertError } = await supabase
                 .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-                
-            if (profileError || !profile) {
-                // Create profile if it doesn't exist
-                const { error: insertError } = await supabase
-                    .from('profiles')
-                    .insert([{
-                        id: user.id,
-                        full_name: user.user_metadata?.full_name || user.email
-                    }]);
-                    
-                if (insertError) {
-                    console.error('Error creating profile:', insertError);
-                }
-            }
-            
-            // Display user name
-            document.getElementById('user-name').textContent = 
-                `Welcome, ${user.user_metadata?.full_name || user.email}`;
-            return user;
+                .insert([{
+                    id: user.id,
+                    full_name: user.user_metadata?.full_name || user.email
+                }]);
+            if (insertError) console.error('Error creating profile:', insertError);
         }
 
-        // Load products
-        async function loadProducts() {
+        document.getElementById('user-name').textContent =
+            `Welcome, ${user.user_metadata?.full_name || user.email}`;
+        return user;
+    }
+
+    // Load products
+    async function loadProducts() {
+        const productsList = document.getElementById('products-list');
+        productsList.innerHTML = '<div class="loading-spinner">Loading products...</div>';
+
+        try {
             const { data, error } = await supabase
                 .from('products')
                 .select(`
                     *,
-                    profiles(full_name, phone)
+                    profiles(full_name)
                 `)
                 .order('created_at', { ascending: false });
-            
+
             if (error) {
                 console.error('Error loading products:', error);
+                productsList.innerHTML = `<div class="error-message">⚠️ ${error.message}</div>`;
+                showToast('Error loading products', 'error');
                 return;
             }
-            
-            const productsList = document.getElementById('products-list');
+
             productsList.innerHTML = '';
-            
-            if (data.length === 0) {
-                productsList.innerHTML = '<p>No products available yet.</p>';
+
+            if (!data || data.length === 0) {
+                productsList.innerHTML = '<div class="no-products">No products available yet.</div>';
                 return;
             }
-            
+
             data.forEach(product => {
-                const statusClass = product.status === 'in_stock' ? 'in-stock' : 
-                                   product.status === 'sold' ? 'sold' : 'reserved';
-                
+                const statusClass = product.status === 'in_stock'
+                    ? 'in-stock'
+                    : product.status === 'sold'
+                        ? 'sold'
+                        : 'reserved';
+
+                const imageHtml = product.image_url
+                    ? `<div class="product-image"><img src="${product.image_url}" alt="${product.name}" onerror="this.src=''; this.parentElement.classList.add('placeholder'); this.parentElement.innerHTML='📷 No Image';"></div>`
+                    : `<div class="product-image placeholder">📷 No Image</div>`;
+
                 const productEl = document.createElement('div');
                 productEl.className = 'product-card';
-                
-                // Add image if available
-                const imageHtml = product.image_url 
-                    ? `<div class="product-image"><img src="${product.image_url}" alt="${product.title}"></div>`
-                    : `<div class="product-image placeholder">📷 No Image</div>`;
-                
                 productEl.innerHTML = `
                     ${imageHtml}
                     <div class="product-details">
-                        <h3>${product.title}</h3>
-                        <p>${product.description}</p>
-                        <p><strong>Price:</strong> KES ${product.price}</p>
-                        <p><strong>Status:</strong> <span class="status-indicator ${statusClass}">${product.status.replace('_', ' ').toUpperCase()}</span></p>
+                        <h3>${product.name}</h3>
+                        <p>${product.description || 'No description provided.'}</p>
+                        <p><strong>Price:</strong> KES ${product.price || 'N/A'}</p>
+                        <p><strong>Status:</strong> <span class="status-indicator ${statusClass}">
+                            ${product.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+                        </span></p>
                         <p><strong>Seller:</strong> ${product.profiles?.full_name || 'Unknown'}</p>
                         <p><strong>Posted:</strong> ${new Date(product.created_at).toLocaleString()}</p>
-                        <button class="chat-seller-btn" data-seller-id="${product.user_id}" data-seller-name="${product.profiles?.full_name || 'Seller'}" data-product-title="${product.title}">
+                        <button class="chat-seller-btn"
+                            data-seller-id="${product.user_id}"
+                            data-seller-name="${product.profiles?.full_name || 'Seller'}"
+                            data-product-title="${product.name}">
                             Chat with Seller
                         </button>
                     </div>
                 `;
+
                 productsList.appendChild(productEl);
             });
-            
-            // Add event listeners to chat buttons
+
+            // Add event listeners for chat buttons
             document.querySelectorAll('.chat-seller-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const sellerId = this.getAttribute('data-seller-id');
-                    const sellerName = this.getAttribute('data-seller-name');
-                    const productTitle = this.getAttribute('data-product-title');
-                    
-                    // Store seller info in sessionStorage
+                button.addEventListener('click', function () {
+                    const sellerId = this.dataset.sellerId;
+                    const sellerName = this.dataset.sellerName;
+                    const productTitle = this.dataset.productTitle;
+
                     sessionStorage.setItem('chatSellerId', sellerId);
                     sessionStorage.setItem('chatSellerName', sellerName);
                     sessionStorage.setItem('chatProductTitle', productTitle);
-                    
-                    // Navigate to chat page
+
                     window.location.href = 'chat.html';
                 });
             });
+        } catch (err) {
+            console.error('Unexpected error:', err);
+            productsList.innerHTML = '<div class="error-message">Unexpected error while loading products.</div>';
+            showToast('Unexpected error occurred', 'error');
         }
+    }
 
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            showToast('👋 Logged out successfully');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-        });
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        showToast('👋 Logged out successfully');
+        setTimeout(() => window.location.href = 'index.html', 1000);
+    });
 
-        // Initialize
-        checkAuth().then(() => {
-            loadProducts();
-            
-            // Real-time subscription for product updates
-            supabase
-                .channel('products')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
-                    loadProducts();
-                })
-                .subscribe();
-        });
-    </script>
+    // Initialize
+    checkAuth().then(() => {
+        loadProducts();
+
+        // Real-time subscription for updates
+        supabase
+            .channel('products')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+                loadProducts();
+            })
+            .subscribe();
+    });
+  </script>
+
+
+
 </body>
 </html>

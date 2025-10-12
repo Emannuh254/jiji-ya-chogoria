@@ -767,7 +767,26 @@ footer p::before {
         padding: 4px 10px;
     }
 }
-
+.form-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-toggle {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .form-toggle a {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .form-toggle a:hover {
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none;
+        }
 /* Performance Optimizations */
 .gpu-accelerated {
     transform: translateZ(0);

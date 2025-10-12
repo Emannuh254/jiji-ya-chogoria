@@ -5,3 +5,4 @@ createdb jiji_ya_chogoria
 psql jiji_ya_chogoria < schema.sql
 
 npm run dev
+npm install dotenv

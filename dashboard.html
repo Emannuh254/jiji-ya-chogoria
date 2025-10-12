@@ -784,9 +784,9 @@
 </head>
 <body>
     <header>
-        <div class="container">
-            <nav class="navbar">
+        <div class="container"><nav class="navbar">
                 <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
                 <ul class="nav-links">
                     <li><a href="dashboard.html" class="dashboard active">Dashboard</a></li>
                     <li><a href="chat.html" class="chat">Chat</a></li>
@@ -795,6 +795,8 @@
                     <li><a href="#" class="logout" id="logout-btn">Logout</a></li>
                 </ul>
             </nav>
+
+
         </div>
     </header>
     
@@ -820,7 +822,12 @@
             </div>
         </div>
     </main>
-
+        <div class="post-image">
+            <img src="${product.image_url}" alt="${product.title}" loading="lazy" 
+                onerror="this.onerror=null; this.parentElement.classList.add('no-image'); this.parentElement.innerHTML='<div class=\'no-image-placeholder\'>📷</div>';">
+            <div class="post-overlay"></div>
+        </div>
+ 
     <footer>
         <div class="container">
             <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>

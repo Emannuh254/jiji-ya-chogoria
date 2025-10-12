@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔐 Reset Password | Jiji ya Chogoria</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #000;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      background: #111;
+      padding: 30px;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.25);
+      animation: fadeIn 0.6s ease;
+    }
+
+    h2 {
+      color: #ff6b35;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #ff6b35, #ff8c42);
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
+    }
+
+    #loading {
+      text-align: center;
+      color: #ff6b35;
+      font-size: 18px;
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Reset your password 🔑</h2>
+    <p id="loading">Please wait... verifying link 🌀</p>
+
+    <form id="reset-form" style="display: none;">
+      <input type="password" id="new-password" placeholder="Enter new password" required />
+      <button type="submit">Update Password</button>
+    </form>
+  </div>
+  <script>
+  const supabase = window.supabase.createClient(
+    'https://lrezerxsbuekkhmpverr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g'
+  );
+
+  async function handlePasswordReset() {
+    const loading = document.getElementById('loading');
+    const form = document.getElementById('reset-form');
+    loading.style.display = 'block';
+
+    // Convert # fragments to query params (GitHub Pages changes them)
+    if (window.location.hash && !window.location.href.includes('code=')) {
+      const url = window.location.href.replace('#', '?');
+      window.history.replaceState({}, document.title, url);
+    }
+
+    // Wait for Supabase to process the reset session
+    const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+    if (error) {
+      loading.textContent = '⚠️ Invalid or expired reset link!';
+      console.error(error);
+      return;
+    }
+
+    loading.style.display = 'none';
+    form.style.display = 'block';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById('new-password').value;
+
+      const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        alert('❌ ' + error.message);
+      } else {
+        alert('✅ Password updated successfully! Please log in again.');
+        window.location.href = 'index.html';
+      }
+    });
+  }
+
+  handlePasswordReset();
+</script>
+
+
+  
+</body>
+</html>

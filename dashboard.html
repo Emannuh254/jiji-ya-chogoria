@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jiji ya Chogoria - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+</head>
+<body>
+    <h1>Jiji ya Chogoria - Product Marketplace</h1>
+    
+    <div id="user-info">
+        <span id="user-name"></span>
+        <button id="chat-btn">Go to Chat</button>
+        <button id="settings-btn">Settings</button>
+        <button id="logout-btn">Logout</button>
+    </div>
+    
+    <!-- Product Posting Section -->
+    <div id="product-section">
+        <h2>Post a New Product</h2>
+        <form id="product-form">
+            <input type="text" id="product-title" placeholder="Product Title" required>
+            <textarea id="product-description" placeholder="Product Description" required></textarea>
+            <input type="number" id="product-price" placeholder="Price (KES)" required>
+            <select id="product-status">
+                <option value="in_stock">In Stock</option>
+                <option value="sold">Sold</option>
+                <option value="reserved">Reserved</option>
+            </select>
+            <button type="submit">Post Product</button>
+        </form>
+    </div>
+    
+    <!-- Products Display -->
+    <div id="products-container">
+        <h2>Available Products</h2>
+        <div id="products-list"></div>
+    </div>
+    <footer>
+        <p>&copy; 2025 Jiji ya Chogoria  by mannuh. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Check authentication and ensure profile exists
+        async function checkAuth() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            // Check if profile exists, create if not
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+                
+            if (profileError || !profile) {
+                // Create profile if it doesn't exist
+                const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: user.id,
+                        full_name: user.user_metadata?.full_name || user.email
+                    }]);
+                    
+                if (insertError) {
+                    console.error('Error creating profile:', insertError);
+                }
+            }
+            
+            // Display user name
+            document.getElementById('user-name').textContent = 
+                `Welcome, ${user.user_metadata?.full_name || user.email}`;
+            return user;
+        }
+
+        // Load products
+        async function loadProducts() {
+            const { data, error } = await supabase
+                .from('products')
+                .select(`
+                    *,
+                    profiles(full_name, phone)
+                `)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('Error loading products:', error);
+                return;
+            }
+            
+            const productsList = document.getElementById('products-list');
+            productsList.innerHTML = '';
+            
+            if (data.length === 0) {
+                productsList.innerHTML = '<p>No products available yet.</p>';
+                return;
+            }
+            
+            data.forEach(product => {
+                const statusClass = product.status === 'in_stock' ? 'in-stock' : 
+                                   product.status === 'sold' ? 'sold' : 'reserved';
+                
+                const productEl = document.createElement('div');
+                productEl.innerHTML = `
+                    <h3>${product.title}</h3>
+                    <p>${product.description}</p>
+                    <p><strong>Price:</strong> KES ${product.price}</p>
+                    <p><strong>Status:</strong> <span class="${statusClass}">${product.status.replace('_', ' ').toUpperCase()}</span></p>
+                    <p><strong>Seller:</strong> ${product.profiles?.full_name || 'Unknown'}</p>
+                    <p><strong>Posted:</strong> ${new Date(product.created_at).toLocaleString()}</p>
+                    <button class="chat-seller-btn" data-seller-id="${product.user_id}" data-seller-name="${product.profiles?.full_name || 'Seller'}" data-product-title="${product.title}">
+                        Chat with Seller
+                    </button>
+                    <hr>
+                `;
+                productsList.appendChild(productEl);
+            });
+            
+            // Add event listeners to chat buttons
+            document.querySelectorAll('.chat-seller-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const sellerId = this.getAttribute('data-seller-id');
+                    const sellerName = this.getAttribute('data-seller-name');
+                    const productTitle = this.getAttribute('data-product-title');
+                    
+                    // Store seller info in sessionStorage
+                    sessionStorage.setItem('chatSellerId', sellerId);
+                    sessionStorage.setItem('chatSellerName', sellerName);
+                    sessionStorage.setItem('chatProductTitle', productTitle);
+                    
+                    // Navigate to chat page
+                    window.location.href = 'chat.html';
+                });
+            });
+        }
+
+        // Post a new product
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            const title = document.getElementById('product-title').value;
+            const description = document.getElementById('product-description').value;
+            const price = document.getElementById('product-price').value;
+            const status = document.getElementById('product-status').value;
+            
+            const { data, error } = await supabase
+                .from('products')
+                .insert([{
+                    title,
+                    description,
+                    price,
+                    status,
+                    user_id: user.id
+                }]);
+            
+            if (error) {
+                alert('Error posting product: ' + error.message);
+            } else {
+                alert('Product posted successfully!');
+                document.getElementById('product-form').reset();
+                loadProducts();
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        // Navigate to chat
+        document.getElementById('chat-btn').addEventListener('click', () => {
+            window.location.href = 'chat.html';
+        });
+
+        // Navigate to settings
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            window.location.href = 'settings.html';
+        });
+
+        // Initialize
+        checkAuth().then(() => {
+            loadProducts();
+            
+            // Real-time subscription for product updates
+            supabase
+                .channel('products')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+                    loadProducts();
+                })
+                .subscribe();
+        });
+    </script>
+</body>
+</html>

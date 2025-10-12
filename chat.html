@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jiji ya Chogoria - Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Jiji ya Chogoria</h1>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div id="user-info">
+            <span id="user-name"></span>
+            <button id="dashboard-btn">Back to Dashboard</button>
+            <button id="settings-btn">Settings</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+        
+        <div id="status-section">
+            <h3>Statuses (Coming Soon)</h3>
+            <p>Status feature will be available in future updates</p>
+        </div>
+        
+        <div id="chat-section">
+            <h2 id="chat-title">Community Chat</h2>
+            <div id="messages-container"></div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." required>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Check authentication
+        async function checkAuth() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            // Display user name
+            document.getElementById('user-name').textContent = 
+                `Welcome, ${user.user_metadata?.full_name || user.email}`;
+            return user;
+        }
+
+        // Load messages
+        async function loadMessages() {
+            const { data, error } = await supabase
+                .from('messages')
+                .select(`
+                    *,
+                    profiles(full_name)
+                `)
+                .order('created_at', { ascending: true });
+            
+            if (error) {
+                console.error('Error loading messages:', error);
+                return;
+            }
+            
+            const messagesContainer = document.getElementById('messages-container');
+            messagesContainer.innerHTML = '';
+            
+            if (data.length === 0) {
+                messagesContainer.innerHTML = '<p>No messages yet. Start the conversation!</p>';
+                return;
+            }
+            
+            data.forEach(message => {
+                const messageEl = document.createElement('div');
+                messageEl.innerHTML = `
+                    <strong>${message.profiles?.full_name || 'Unknown'}:</strong> ${message.content}
+                    <small>${new Date(message.created_at).toLocaleString()}</small>
+                `;
+                messagesContainer.appendChild(messageEl);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Send a message
+        document.getElementById('message-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            const content = document.getElementById('message-input').value;
+            
+            const { data, error } = await supabase
+                .from('messages')
+                .insert([{
+                    content,
+                    user_id: user.id
+                }]);
+            
+            if (error) {
+                showToast('Error sending message: ' + error.message, 'error');
+            } else {
+                document.getElementById('message-input').value = '';
+                loadMessages();
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            showToast('Logged out successfully');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        });
+
+        // Navigate to dashboard
+        document.getElementById('dashboard-btn').addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Navigate to settings
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            window.location.href = 'settings.html';
+        });
+
+        // Initialize
+        checkAuth().then(async (user) => {
+            // Check if we're coming from a product page
+            const sellerId = sessionStorage.getItem('chatSellerId');
+            const sellerName = sessionStorage.getItem('chatSellerName');
+            const productTitle = sessionStorage.getItem('chatProductTitle');
+            
+            if (sellerId && sellerName && productTitle) {
+                // Update chat title
+                document.getElementById('chat-title').textContent = `Chat with ${sellerName} about: ${productTitle}`;
+                
+                // Pre-fill message input
+                document.getElementById('message-input').value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
+                
+                // Clear sessionStorage
+                sessionStorage.removeItem('chatSellerId');
+                sessionStorage.removeItem('chatSellerName');
+                sessionStorage.removeItem('chatProductTitle');
+            }
+            
+            loadMessages();
+            
+            // Real-time subscription for new messages
+            supabase
+                .channel('messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    loadMessages();
+                })
+                .subscribe();
+        });
+    </script>
+</body>
+</html>

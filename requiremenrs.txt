@@ -1,0 +1,7 @@
+npm install express postgres bcryptjs jsonwebtoken cors
+npm install --save-dev nodemon
+npm install postgres
+createdb jiji_ya_chogoria
+psql jiji_ya_chogoria < schema.sql
+
+npm run dev

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jiji ya Chogoria - Settings</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Jiji ya Chogoria</h1>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div id="user-info">
+            <span id="user-name"></span>
+            <button id="dashboard-btn">Back to Dashboard</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+        
+        <div id="settings-container">
+            <div id="phone-section">
+                <h3>Phone Number</h3>
+                <form id="phone-form">
+                    <input type="tel" id="phone-number" placeholder="Enter your phone number" required>
+                    <button type="submit">Save Phone Number</button>
+                </form>
+                <div id="phone-status"></div>
+            </div>
+            
+            <div id="delete-section">
+                <h3>Delete Account</h3>
+                <p>Warning: This action cannot be undone. All your data will be permanently deleted.</p>
+                <button id="delete-account-btn" class="danger">Delete My Account</button>
+            </div>
+            
+            <div id="support-section">
+                <h3>Help & Support</h3>
+                <p>Need help? Contact our support team on WhatsApp:</p>
+                <a id="whatsapp-support" href="https://wa.me/25746100508?text=Hi%20I%20need%20help%20from%20your%20website" target="_blank">
+                    <button>Contact Support on WhatsApp</button>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Check authentication
+        async function checkAuth() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            // Display user name
+            document.getElementById('user-name').textContent = 
+                `Welcome, ${user.user_metadata?.full_name || user.email}`;
+            return user;
+        }
+
+        // Load user profile
+        async function loadProfile() {
+            const user = await checkAuth();
+            if (!user) return;
+            
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+                
+            if (data && data.phone) {
+                document.getElementById('phone-number').value = data.phone;
+                document.getElementById('phone-status').textContent = 'Phone number saved';
+                document.getElementById('phone-status').style.color = 'var(--success)';
+            }
+        }
+
+        // Save phone number
+        document.getElementById('phone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            const phone = document.getElementById('phone-number').value;
+            
+            const { error } = await supabase
+                .from('profiles')
+                .update({ phone })
+                .eq('id', user.id);
+                
+            if (error) {
+                document.getElementById('phone-status').textContent = 'Error saving phone number: ' + error.message;
+                document.getElementById('phone-status').style.color = 'var(--error)';
+            } else {
+                document.getElementById('phone-status').textContent = 'Phone number saved successfully';
+                document.getElementById('phone-status').style.color = 'var(--success)';
+                showToast('Phone number updated successfully');
+            }
+        });
+
+        // Delete account
+        document.getElementById('delete-account-btn').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                const user = await checkAuth();
+                if (!user) return;
+                
+                try {
+                    // Delete user's products
+                    await supabase
+                        .from('products')
+                        .delete()
+                        .eq('user_id', user.id);
+                    
+                    // Delete user's messages
+                    await supabase
+                        .from('messages')
+                        .delete()
+                        .eq('user_id', user.id);
+                    
+                    // Delete user's profile
+                    await supabase
+                        .from('profiles')
+                        .delete()
+                        .eq('id', user.id);
+                    
+                    // Delete user account
+                    const { error } = await supabase.auth.admin.deleteUser(user.id);
+                    
+                    if (error) {
+                        showToast('Error deleting account: ' + error.message, 'error');
+                    } else {
+                        showToast('Your account has been deleted successfully.');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    }
+                } catch (error) {
+                    showToast('Error deleting account: ' + error.message, 'error');
+                }
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            showToast('Logged out successfully');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        });
+
+        // Navigate to dashboard
+        document.getElementById('dashboard-btn').addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Initialize
+        checkAuth().then(() => {
+            loadProfile();
+        });
+    </script>
+</body>
+</html>

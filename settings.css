@@ -1,0 +1,262 @@
+/* Mobile-optimized styles for Settings Page */
+
+/* Base mobile adjustments */
+@media (max-width: 768px) {
+    /* Container adjustments */
+    .container {
+        padding: 0 15px;
+    }
+    
+    /* Header adjustments */
+    header {
+        padding: 12px 0;
+    }
+    
+    .navbar {
+        padding: 10px 0;
+    }
+    
+    .navbar .logo {
+        font-size: 1.5rem;
+    }
+    
+    /* Mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block;
+        font-size: 1.5rem;
+    }
+    
+    .navbar .nav-links {
+        display: none; /* Will be shown with JS when active */
+        position: fixed;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background: var(--bg-secondary);
+        flex-direction: column;
+        padding: 20px;
+        gap: 12px;
+        box-shadow: 0 4px 15px var(--shadow);
+        z-index: 99;
+    }
+    
+    .navbar .nav-links.active {
+        display: flex;
+    }
+    
+    .navbar .nav-links a {
+        width: 100%;
+        justify-content: center;
+        padding: 14px;
+        font-size: 1.1rem;
+    }
+    
+    .navbar .post-product-btn {
+        display: none;
+    }
+    
+    /* Main content adjustments */
+    main {
+        padding: 20px 0;
+    }
+    
+    #user-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 25px;
+        padding: 15px;
+        background: var(--bg-card);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+    
+    #user-name {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Settings container */
+    #settings-container {
+        margin: 0;
+        max-width: 100%;
+    }
+    
+    #settings-container > div {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    #settings-container h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    /* Form adjustments */
+    #phone-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    #phone-form input {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+    
+    #phone-form button {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+    
+    #phone-status {
+        margin-top: 15px;
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    /* Delete section */
+    #delete-section p {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+    }
+    
+    #delete-account-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+    
+    /* Support section */
+    #support-section p {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+    }
+    
+    #whatsapp-support button {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.1rem;
+        justify-content: center;
+    }
+    
+    /* Toast notifications */
+    .toast {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        padding: 15px;
+        font-size: 1rem;
+    }
+    
+    /* Footer adjustments */
+    footer {
+        padding: 20px 0;
+        margin-top: 30px;
+    }
+    
+    footer p {
+        font-size: 1rem;
+    }
+}
+
+/* Smaller mobile devices */
+@media (max-width: 480px) {
+    /* Container adjustments */
+    .container {
+        padding: 0 10px;
+    }
+    
+    /* Header adjustments */
+    .navbar .logo {
+        font-size: 1.3rem;
+    }
+    
+    .mobile-menu-toggle {
+        font-size: 1.3rem;
+    }
+    
+    /* User info */
+    #user-name {
+        font-size: 1.2rem;
+    }
+    
+    /* Settings container */
+    #settings-container > div {
+        padding: 15px;
+    }
+    
+    #settings-container h3 {
+        font-size: 1.3rem;
+    }
+    
+    /* Form adjustments */
+    #phone-form input {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    #phone-form button {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    #phone-status {
+        font-size: 0.9rem;
+    }
+    
+    /* Delete section */
+    #delete-section p {
+        font-size: 1rem;
+    }
+    
+    #delete-account-btn {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    /* Support section */
+    #support-section p {
+        font-size: 1rem;
+    }
+    
+    #whatsapp-support button {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    /* Toast notifications */
+    .toast {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    
+    /* Footer adjustments */
+    footer p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) {
+    /* Increase touch target size */
+    button, 
+    .navbar .nav-links a, 
+    input {
+        min-height: 44px;
+    }
+    
+    /* Remove hover effects */
+    button:hover, 
+    .navbar .nav-links a:hover, 
+    #settings-container > div:hover {
+        transform: none;
+        background-color: inherit;
+    }
+    
+    /* Add active states for touch feedback */
+    button:active, 
+    .navbar .nav-links a:active {
+        background-color: rgba(255, 107, 53, 0.2);
+    }
+}

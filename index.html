@@ -1,160 +1,264 @@
-<!DOCTYPE html>
-<html>
+\<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Jiji ya Chogoria - Login/Signup</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
-    <link rel="stylesheet" href="index.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛍️ Jiji ya Chogoria - Login / Signup</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+<style>
+/* 🌙 Dark Orange Theme - Sleek & Modern */
+:root {
+  --bg: #000;
+  --card: #111;
+  --accent1: #ff6b35;
+  --accent2: #ff8c42;
+  --text: #fff;
+  --subtext: #aaa;
+  --error: #ff4b4b;
+  --success: #4caf50;
+  --transition: all 0.3s ease;
+  --radius: 14px;
+  --shadow: 0 0 20px rgba(255, 107, 53, 0.25);
+}
+* {
+  margin: 0; padding: 0; box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  overflow-x: hidden;
+  transition: var(--transition);
+}
+header {
+  margin-bottom: 1.5rem;
+  animation: fadeIn 1.2s ease;
+}
+header h1 {
+  font-size: 2.4rem;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+header p {
+  color: var(--subtext);
+  font-size: 1.1rem;
+}
+.form-container {
+  background: var(--card);
+  padding: 1.8rem;
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 380px;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  animation: fadeInUp 1s ease;
+}
+.hidden { display: none; }
+
+h2 {
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.9rem;
+  margin: 0.5rem 0;
+  border: none;
+  border-radius: var(--radius);
+  background: #1a1a1a;
+  color: var(--text);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+input:focus {
+  background: #222;
+  outline: 2px solid var(--accent1);
+}
+
+button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 30px;
+  margin-top: 0.6rem;
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
+}
+
+.form-toggle p {
+  color: var(--subtext);
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+.form-toggle a {
+  color: var(--accent1);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#auth-message {
+  margin-top: 0.7rem;
+  font-size: 0.95rem;
+}
+
+/* 🌪️ Toasts */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  color: #fff;
+  opacity: 0.95;
+  box-shadow: var(--shadow);
+  animation: fadeInUp 0.5s ease;
+}
+.toast.success { border-left: 5px solid var(--success); }
+.toast.error { border-left: 5px solid var(--error); }
+
+/* 🔄 Spinner */
+.loading-spinner {
+  border: 4px solid #333;
+  border-top: 4px solid var(--accent1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 1rem auto;
+}
+
+/* ✨ Animations */
+@keyframes spin { 0% {transform: rotate(0);} 100% {transform: rotate(360deg);} }
+@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+@keyframes fadeInUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+
+footer {
+  margin-top: 1.5rem;
+  color: var(--subtext);
+  font-size: 0.9rem;
+}
+  </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>Jiji ya Chogoria</h1>
-            <h1>Your Local Marketplace</h1>
+  <header>
+    <h1>🛒 Jiji ya Chogoria</h1>
+    <p>Your Local Marketplace ✨</p>
+  </header>
+
+  <main>
+    <div class="form-container" id="auth-container">
+      <div id="login-section">
+        <h2>🔑 Login</h2>
+        <div id="loading" class="hidden loading-spinner"></div>
+        <form id="login-form">
+          <input type="email" id="login-email" placeholder="📧 Email" required>
+          <input type="password" id="login-password" placeholder="🔒 Password" required>
+          <button type="submit">Login 🚀</button>
+        </form>
+        <div class="form-toggle">
+          <p>Don't have an account? <a id="show-signup">Sign Up</a></p>
         </div>
-    </header>
-    
-    <main class="container">
-        <div id="auth-container" class="form-container">
-            <div id="login-section">
-                <h2>Login</h2>
-                <form id="login-form">
-                    <input type="email" id="login-email" placeholder="📧 Email" required>
-                    <input type="password" id="login-password" placeholder="🔒 Password" required>
-                    <button type="submit">Login</button>
-                </form>
-                <div class="form-toggle">
-                    <p>Don't have an account? <a id="show-signup">Sign Up</a></p>
-                </div>
-            </div>
-            
-            <div id="signup-section" class="hidden">
-                <h2>Signup</h2>
-                <form id="signup-form">
-                    <input type="text" id="signup-name" placeholder="👤 Full Name" required>
-                    <input type="email" id="signup-email" placeholder="📧 Email" required>
-                    <input type="password" id="signup-password" placeholder="🔒 Password" required>
-                    <button type="submit">Signup</button>
-                </form>
-                <div class="form-toggle">
-                    <p>Already have an account? <a id="show-login">Log In</a></p>
-                </div>
-            </div>
-            <div id="auth-message"></div>
+      </div>
+
+      <div id="signup-section" class="hidden">
+        <h2>🧍‍♂️ Signup</h2>
+        <form id="signup-form">
+          <input type="text" id="signup-name" placeholder="👤 Full Name" required>
+          <input type="email" id="signup-email" placeholder="📧 Email" required>
+          <input type="password" id="signup-password" placeholder="🔒 Password" required>
+          <button type="submit">Sign Up 🎉</button>
+        </form>
+        <div class="form-toggle">
+          <p>Already have an account? <a id="show-login">Log In</a></p>
         </div>
-    </main>
+      </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Jiji ya Chogoria by mannuh. All rights reserved.</p>
-        </div>
-    </footer>
+      <div id="auth-message"></div>
+    </div>
+  </main>
 
-    <script>
-        // Initialize Supabase
-        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  <footer>
+    <p>© 2025 <b>Mannuh</b> — Built with ❤️ in Chogoria</p>
+  </footer>
 
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
+  <script>
+    const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Check if user is already logged in
-        async function checkSession() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                window.location.href = 'dashboard.html';
-            }
-        }
+    const loginSection = document.getElementById('login-section');
+    const signupSection = document.getElementById('signup-section');
+    const loading = document.getElementById('loading');
 
-        // Show message
-        function showMessage(message, isError = false) {
-            const messageDiv = document.getElementById('auth-message');
-            messageDiv.textContent = message;
-            messageDiv.style.color = isError ? 'var(--error)' : 'var(--success)';
-            messageDiv.style.marginTop = '10px';
-        }
+    function showToast(msg, type='success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(()=> toast.remove(), 3000);
+    }
 
-        // Toggle between login and signup forms
-        const loginSection = document.getElementById('login-section');
-        const signupSection = document.getElementById('signup-section');
-        const showSignupLink = document.getElementById('show-signup');
-        const showLoginLink = document.getElementById('show-login');
+    document.getElementById('show-signup').addEventListener('click', () => {
+      loginSection.classList.add('hidden');
+      signupSection.classList.remove('hidden');
+    });
 
-        showSignupLink.addEventListener('click', () => {
-            loginSection.classList.add('hidden');
-            signupSection.classList.remove('hidden');
-            document.getElementById('auth-message').textContent = '';
-        });
+    document.getElementById('show-login').addEventListener('click', () => {
+      signupSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    });
 
-        showLoginLink.addEventListener('click', () => {
-            signupSection.classList.add('hidden');
-            loginSection.classList.remove('hidden');
-            document.getElementById('auth-message').textContent = '';
-        });
+    // Login
+    document.getElementById('login-form').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      loading.classList.remove('hidden');
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      loading.classList.add('hidden');
+      if(error) return showToast('❌ '+error.message, 'error');
+      showToast('✅ Login Successful!');
+      setTimeout(()=> window.location.href='dashboard.html', 1200);
+    });
 
-        // Login form handler
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                
-                if (error) {
-                    showToast(error.message, 'error');
-                } else {
-                    showToast('🎉 Login successful! Redirecting...');
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1500);
-                }
-            } catch (error) {
-                showToast('❌ Login failed: ' + error.message, 'error');
-            }
-        });
-
-        // Signup form handler
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('signup-name').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            
-            try {
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password,
-                    options: { 
-                        data: { full_name: name },
-                        emailRedirectTo: window.location.origin
-                    }
-                });
-                
-                if (error) {
-                    showToast(error.message, 'error');
-                } else {
-                    showToast('📧 Account created! Please check your email to confirm.');
-                    document.getElementById('signup-form').reset();
-                    signupSection.classList.add('hidden');
-                    loginSection.classList.remove('hidden');
-                }
-            } catch (error) {
-                showToast('❌ Signup failed: ' + error.message, 'error');
-            }
-        });
-
-        // Check session on page load
-        checkSession();
-    </script>
+    // Signup
+    document.getElementById('signup-form').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      loading.classList.remove('hidden');
+      const { data, error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { full_name: name }, emailRedirectTo: window.location.origin }
+      });
+      loading.classList.add('hidden');
+      if(error) return showToast('❌ '+error.message, 'error');
+      showToast('📧 Account created! Verify your email.');
+      signupSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    });
+  </script>
 </body>
 </html>

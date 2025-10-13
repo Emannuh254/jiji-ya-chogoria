@@ -254,8 +254,13 @@
         .back-btn { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer; margin-right: 10px; }
         .chat-user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-gradient); color: var(--bg-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; margin-right: 8px; position: relative; }
         .chat-user-avatar.online::after { content: ''; position: absolute; bottom: 0; right: 0; width: 8px; height: 8px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg-secondary); }
+        .chat-user-info { flex: 1; }
         .chat-user-name { font-weight: 600; font-size: 1rem; color: var(--accent-primary); }
         .chat-user-status { font-size: 0.8rem; color: var(--text-secondary); }
+        .chat-user-contact { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .chat-user-phone { font-size: 0.8rem; color: var(--text-secondary); }
+        .contact-btn { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--button-radius); color: var(--text-primary); font-size: 0.8rem; padding: 4px 8px; cursor: pointer; transition: var(--transition); }
+        .contact-btn:hover { background: var(--bg-primary); border-color: var(--accent-primary); color: var(--accent-primary); }
         .messages-container { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: var(--border-radius); }
         .message.sent { background: var(--bg-message-sent); color: var(--bg-primary); align-self: flex-end; border-bottom-right-radius: 2px; font-size: 1.1rem; }
@@ -368,6 +373,11 @@
                 <div class="chat-user-info">
                     <div class="chat-user-name" id="chat-user-name">Username</div>
                     <div class="chat-user-status" id="chat-user-status">Offline</div>
+                    <div class="chat-user-contact" id="chat-user-contact" style="display: none;">
+                        <div class="chat-user-phone" id="chat-user-phone"></div>
+                        <button class="contact-btn" id="call-btn" aria-label="Call user">📞 Call</button>
+                        <button class="contact-btn" id="whatsapp-btn" aria-label="WhatsApp user">💬 WhatsApp</button>
+                    </div>
                 </div>
             </div>
             <div class="messages-container" id="messages-container" role="log" aria-live="polite"></div>
@@ -383,448 +393,758 @@
     <footer>
         <p><b>KHAMIC.inc</b> 2025</p>
     </footer>
-
     <script>
-        // Initialize Supabase with the correct credentials
-        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase with the correct credentials
+    const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const elements = {
-            mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
-            navLinks: document.getElementById('nav-links'),
-            sidebar: document.getElementById('sidebar'),
-            conversationsContainer: document.getElementById('conversations-container'),
-            messagesContainer: document.getElementById('messages-container'),
-            messageForm: document.getElementById('message-form'),
-            messageInput: document.getElementById('message-input'),
-            messageInputContainer: document.getElementById('message-input-container'),
-            chatHeader: document.getElementById('chat-header'),
-            chatUserAvatar: document.getElementById('chat-user-avatar'),
-            chatUserName: document.getElementById('chat-user-name'),
-            chatUserStatus: document.getElementById('chat-user-status'),
-            backToInboxBtn: document.getElementById('back-to-inbox'),
-            logoutBtn: document.getElementById('logout-btn'),
-            searchInput: document.getElementById('search-input'),
-            tabBtns: document.querySelectorAll('.tab-btn')
+    const elements = {
+        mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
+        navLinks: document.getElementById('nav-links'),
+        sidebar: document.getElementById('sidebar'),
+        conversationsContainer: document.getElementById('conversations-container'),
+        messagesContainer: document.getElementById('messages-container'),
+        messageForm: document.getElementById('message-form'),
+        messageInput: document.getElementById('message-input'),
+        messageInputContainer: document.getElementById('message-input-container'),
+        chatHeader: document.getElementById('chat-header'),
+        chatUserAvatar: document.getElementById('chat-user-avatar'),
+        chatUserName: document.getElementById('chat-user-name'),
+        chatUserStatus: document.getElementById('chat-user-status'),
+        chatUserContact: document.getElementById('chat-user-contact'),
+        chatUserPhone: document.getElementById('chat-user-phone'),
+        callBtn: document.getElementById('call-btn'),
+        whatsappBtn: document.getElementById('whatsapp-btn'),
+        backToInboxBtn: document.getElementById('back-to-inbox'),
+        logoutBtn: document.getElementById('logout-btn'),
+        searchInput: document.getElementById('search-input'),
+        tabBtns: document.querySelectorAll('.tab-btn')
+    };
+
+    let currentUser = null, activeTab = 'inbox', activeConversation = null, onlineUsers = new Set(), page = 1, pageSize = 20;
+    let presenceChannel = null;
+    let messagesChannel = null;
+
+    const isMobile = () => window.innerWidth <= 768;
+
+    const debounce = (fn, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), delay);
         };
+    };
 
-        let currentUser = null, activeTab = 'inbox', activeConversation = null, onlineUsers = new Set(), page = 1, pageSize = 20;
+    const escapeHtml = text => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
 
-        const isMobile = () => window.innerWidth <= 768;
+    // --- NAVBAR TOGGLE ---
+    elements.mobileMenuToggle.addEventListener('click', () => {
+        const isActive = elements.navLinks.classList.toggle('active');
+        document.body.style.overflow = isActive ? 'hidden' : '';
+    });
 
-        const debounce = (fn, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => fn(...args), delay);
-            };
-        };
-
-        const escapeHtml = text => {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        };
-
-        // --- NAVBAR TOGGLE (Fixed to match settings.html) ---
-        elements.mobileMenuToggle.addEventListener('click', () => {
-            const isActive = elements.navLinks.classList.toggle('active');
-            document.body.style.overflow = isActive ? 'hidden' : '';
+    // Close mobile menu when clicking on a link
+    elements.navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            elements.navLinks.classList.remove('active');
+            document.body.style.overflow = '';
         });
+    });
 
-        // Close mobile menu when clicking on a link
-        elements.navLinks.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                elements.navLinks.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-        });
+    // --- UTILITIES ---
+    const formatTime = dateString => {
+        const date = new Date(dateString), now = new Date();
+        if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
 
-        // --- UTILITIES ---
-        const formatTime = dateString => {
-            const date = new Date(dateString), now = new Date();
-            if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-            if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        };
+    const showToast = (message, type = 'success') => {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        // Add icon based on type
+        if (type === 'success') {
+            toast.innerHTML = `<span>✅</span> <span>${message}</span>`;
+        } else if (type === 'error') {
+            toast.innerHTML = `<span>❌</span> <span>${message}</span>`;
+        } else if (type === 'warning') {
+            toast.innerHTML = `<span>⚠️</span> <span>${message}</span>`;
+        } else {
+            toast.textContent = message;
+        }
+        
+        document.body.appendChild(toast);
 
-        const showToast = (message, type = 'success') => {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            // Add icon based on type
-            if (type === 'success') {
-                toast.innerHTML = `<span>✅</span> <span>${message}</span>`;
-            } else if (type === 'error') {
-                toast.innerHTML = `<span>❌</span> <span>${message}</span>`;
-            } else if (type === 'warning') {
-                toast.innerHTML = `<span>⚠️</span> <span>${message}</span>`;
-            } else {
-                toast.textContent = message;
-            }
-            
-            document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
 
-            setTimeout(() => toast.remove(), 3000);
-        };
-
-        // --- AUTH CHECK (Fixed to match settings.html) ---
-        async function checkAuth() {
-            try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (!user) {
-                    showToast('Please log in to access chat 😕', 'error');
-                    window.location.href = 'index.html';
-                    return null;
-                }
-                
-                return user;
-            } catch (error) {
-                console.error('Authentication error:', error);
-                showToast('Authentication failed. Please log in again. 😕', 'error');
+    // --- AUTH CHECK ---
+    async function checkAuth() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (!user) {
+                showToast('Please log in to access chat 😕', 'error');
                 window.location.href = 'index.html';
                 return null;
             }
+            
+            return user;
+        } catch (error) {
+            console.error('Authentication error:', error);
+            showToast('Authentication failed. Please log in again. 😕', 'error');
+            window.location.href = 'index.html';
+            return null;
         }
+    }
 
-        // --- LOAD CONVERSATIONS ---
-        async function loadConversations(searchTerm = '') {
-            elements.conversationsContainer.innerHTML = '<div class="loading-spinner">Loading conversations...</div>';
+    // --- DEBUGGING FUNCTION ---
+    function debugLog(message, data = null) {
+        console.log(`[DEBUG] ${message}`, data);
+    }
 
-            try {
-                if (activeTab === 'inbox') {
-                    // Fetch private conversations
-                    const { data: messages, error } = await supabase
+    // --- LOAD CONVERSATIONS ---
+    async function loadConversations(searchTerm = '') {
+        debugLog('Loading conversations', { activeTab, searchTerm });
+        
+        elements.conversationsContainer.innerHTML = '<div class="loading-spinner">Loading conversations...</div>';
+
+        try {
+            if (activeTab === 'inbox') {
+                debugLog('Loading private conversations');
+                
+                // First, let's check if the messages table exists
+                try {
+                    const { data: testData, error: testError } = await supabase
                         .from('messages')
-                        .select('*, profiles!messages_recipient_id_fkey(full_name)')
+                        .select('count')
+                        .limit(1);
+                    
+                    if (testError) {
+                        console.error('Messages table might not exist:', testError);
+                        elements.conversationsContainer.innerHTML = `
+                            <div class="error-message">
+                                <h3>Database Setup Required</h3>
+                                <p>The messages table needs to be set up in your Supabase database.</p>
+                                <p>Please run the SQL queries provided in the documentation.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Error checking messages table:', err);
+                }
+
+                // Fetch private messages without joins
+                let messages;
+                let error;
+                
+                try {
+                    const result = await supabase
+                        .from('messages')
+                        .select('*')
                         .or(`user_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
                         .eq('is_private', true)
                         .order('created_at', { ascending: false });
+                    
+                    messages = result.data;
+                    error = result.error;
+                } catch (err) {
+                    console.error('Error fetching messages:', err);
+                    elements.conversationsContainer.innerHTML = `
+                        <div class="error-message">
+                            <h3>Connection Error</h3>
+                            <p>Unable to connect to the database. Please check your connection.</p>
+                            <small>Error: ${err.message}</small>
+                        </div>
+                    `;
+                    return;
+                }
 
-                    if (error) throw error;
+                if (error) {
+                    console.error('Supabase error:', error);
+                    elements.conversationsContainer.innerHTML = `
+                        <div class="error-message">
+                            <h3>Database Error</h3>
+                            <p>${error.message}</p>
+                            <p>Please make sure your database tables are set up correctly.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
-                    // Group messages by the other user
-                    const conversationsMap = new Map();
+                debugLog('Messages fetched', { count: messages?.length || 0 });
+
+                // Extract unique user IDs (other than current user)
+                const userIds = new Set();
+                messages.forEach(msg => {
+                    if (msg.user_id === currentUser.id && msg.recipient_id) {
+                        userIds.add(msg.recipient_id);
+                    } else if (msg.recipient_id === currentUser.id && msg.user_id) {
+                        userIds.add(msg.user_id);
+                    }
+                });
+
+                // Fetch profiles for these user IDs
+                let profiles = [];
+                if (userIds.size > 0) {
+                    const { data: profilesData, error: profilesError } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, phone')
+                        .in('id', Array.from(userIds));
+                    
+                    if (profilesError) {
+                        console.error('Error fetching profiles:', profilesError);
+                    } else {
+                        profiles = profilesData || [];
+                    }
+                }
+
+                // Create a map of user profiles
+                const profileMap = {};
+                profiles.forEach(profile => {
+                    profileMap[profile.id] = profile;
+                });
+
+                // Group messages by the other user
+                const conversationsMap = new Map();
+                
+                if (messages && messages.length > 0) {
                     messages.forEach(msg => {
                         const otherUserId = msg.user_id === currentUser.id ? msg.recipient_id : msg.user_id;
+                        const otherUserProfile = profileMap[otherUserId] || { full_name: 'Unknown User', phone: null };
+                        
                         if (!conversationsMap.has(otherUserId)) {
                             conversationsMap.set(otherUserId, {
                                 id: otherUserId,
-                                name: msg.profiles?.full_name || 'Unknown',
+                                name: otherUserProfile.full_name,
+                                phone: otherUserProfile.phone,
                                 lastMessage: msg.content,
                                 lastMessageTime: msg.created_at,
                                 unread: msg.user_id !== currentUser.id && !msg.is_read
                             });
+                        } else {
+                            // Update with the latest message
+                            const existing = conversationsMap.get(otherUserId);
+                            if (new Date(msg.created_at) > new Date(existing.lastMessageTime)) {
+                                existing.lastMessage = msg.content;
+                                existing.lastMessageTime = msg.created_at;
+                                existing.unread = msg.user_id !== currentUser.id && !msg.is_read;
+                            }
                         }
                     });
+                }
 
-                    let conversations = Array.from(conversationsMap.values());
+                let conversations = Array.from(conversationsMap.values());
+                debugLog('Conversations mapped', { count: conversations.length });
 
-                    // Filter by search term if provided
-                    if (searchTerm) {
-                        conversations = conversations.filter(conv => 
-                            conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
-                        );
-                    }
+                // Filter by search term if provided
+                if (searchTerm) {
+                    const lowerSearchTerm = searchTerm.toLowerCase();
+                    conversations = conversations.filter(conv => 
+                        conv.name.toLowerCase().includes(lowerSearchTerm) ||
+                        (conv.lastMessage && conv.lastMessage.toLowerCase().includes(lowerSearchTerm))
+                    );
+                }
 
-                    // Render conversations
-                    if (conversations.length === 0) {
-                        elements.conversationsContainer.innerHTML = '<div class="no-conversations">No conversations found</div>';
-                        return;
-                    }
-
-                    elements.conversationsContainer.innerHTML = conversations.map(conv => `
-                        <div class="conversation" data-user-id="${conv.id}">
-                            <div class="conversation-avatar ${onlineUsers.has(conv.id) ? 'online' : ''}">${conv.name.charAt(0).toUpperCase()}</div>
-                            <div class="conversation-details">
-                                <div class="conversation-header">
-                                    <div class="conversation-name">${escapeHtml(conv.name)}</div>
-                                    <div class="conversation-time">${formatTime(conv.lastMessageTime)}</div>
-                                </div>
-                                <div class="conversation-preview">${escapeHtml(conv.lastMessage)}</div>
-                            </div>
-                            ${conv.unread ? '<div class="unread-indicator">New</div>' : ''}
-                        </div>
-                    `).join('');
-
-                    // Add click event to each conversation
-                    document.querySelectorAll('.conversation').forEach(conv => {
-                        conv.addEventListener('click', () => {
-                            const userId = conv.getAttribute('data-user-id');
-                            const userName = conv.querySelector('.conversation-name').textContent;
-                            loadPrivateMessages(userId, userName);
-                        });
-                    });
-
-                } else if (activeTab === 'community') {
-                    // For community, we just show one conversation for the community chat
+                // Render conversations
+                if (conversations.length === 0) {
                     elements.conversationsContainer.innerHTML = `
-                        <div class="conversation" data-conversation-id="community">
-                            <div class="conversation-avatar">C</div>
-                            <div class="conversation-details">
-                                <div class="conversation-header">
-                                    <div class="conversation-name">Community Chat</div>
-                                    <div class="conversation-time">Now</div>
-                                </div>
-                                <div class="conversation-preview">Join the community conversation</div>
-                            </div>
+                        <div class="no-conversations">
+                            <h3>No conversations found</h3>
+                            <p>${searchTerm ? 'Try adjusting your search terms' : 'Start a conversation with another user'}</p>
                         </div>
                     `;
-
-                    // Add click event to community conversation
-                    document.querySelector('.conversation').addEventListener('click', () => {
-                        loadCommunityChat();
-                    });
+                    return;
                 }
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-                elements.conversationsContainer.innerHTML = '<div class="error-message">Error loading conversations 😕</div>';
+
+                elements.conversationsContainer.innerHTML = conversations.map(conv => `
+                    <div class="conversation" data-user-id="${conv.id}">
+                        <div class="conversation-avatar ${onlineUsers.has(conv.id) ? 'online' : ''}">${conv.name.charAt(0).toUpperCase()}</div>
+                        <div class="conversation-details">
+                            <div class="conversation-header">
+                                <div class="conversation-name">${escapeHtml(conv.name)}</div>
+                                <div class="conversation-time">${formatTime(conv.lastMessageTime)}</div>
+                            </div>
+                            <div class="conversation-preview">${escapeHtml(conv.lastMessage || 'No messages yet')}</div>
+                        </div>
+                        ${conv.unread ? '<div class="unread-indicator">New</div>' : ''}
+                    </div>
+                `).join('');
+
+                // Add click event to each conversation
+                document.querySelectorAll('.conversation').forEach(conv => {
+                    conv.addEventListener('click', () => {
+                        const userId = conv.getAttribute('data-user-id');
+                        const userName = conv.querySelector('.conversation-name').textContent;
+                        const userPhone = conv.querySelector('.conversation-phone')?.textContent || null;
+                        debugLog('Conversation clicked', { userId, userName, userPhone });
+                        loadPrivateMessages(userId, userName, userPhone);
+                    });
+                });
+
+            } else if (activeTab === 'community') {
+                debugLog('Loading community chat');
+                
+                // For community, we just show one conversation for the community chat
+                elements.conversationsContainer.innerHTML = `
+                    <div class="conversation" data-conversation-id="community">
+                        <div class="conversation-avatar">C</div>
+                        <div class="conversation-details">
+                            <div class="conversation-header">
+                                <div class="conversation-name">Community Chat</div>
+                                <div class="conversation-time">Now</div>
+                            </div>
+                            <div class="conversation-preview">Join the community conversation</div>
+                        </div>
+                    </div>
+                `;
+
+                // Add click event to community conversation
+                document.querySelector('.conversation').addEventListener('click', () => {
+                    debugLog('Community conversation clicked');
+                    loadCommunityChat();
+                });
             }
+        } catch (error) {
+            console.error('Error in loadConversations:', error);
+            elements.conversationsContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>Unexpected Error</h3>
+                    <p>An error occurred while loading conversations.</p>
+                    <small>${error.message}</small>
+                </div>
+            `;
+        }
+    }
+
+    // --- LOAD PRIVATE MESSAGES ---
+    async function loadPrivateMessages(recipientId, recipientName, recipientPhone = null) {
+        debugLog('Loading private messages', { recipientId, recipientName, recipientPhone });
+        
+        activeConversation = recipientId;
+        elements.chatHeader.style.display = 'flex';
+        elements.chatUserName.textContent = recipientName;
+        elements.chatUserStatus.textContent = onlineUsers.has(recipientId) ? 'Online' : 'Offline';
+        elements.chatUserAvatar.classList.toggle('online', onlineUsers.has(recipientId));
+        elements.chatUserAvatar.textContent = recipientName.charAt(0).toUpperCase();
+        
+        // Show contact information if phone number is available
+        if (recipientPhone) {
+            elements.chatUserPhone.textContent = recipientPhone;
+            elements.chatUserContact.style.display = 'flex';
+            
+            // Set up call button
+            elements.callBtn.onclick = () => {
+                window.location.href = `tel:${recipientPhone}`;
+            };
+            
+            // Set up WhatsApp button
+            elements.whatsappBtn.onclick = () => {
+                window.open(`https://wa.me/${recipientPhone.replace(/\D/g, '')}`, '_blank');
+            };
+        } else {
+            elements.chatUserContact.style.display = 'none';
+        }
+        
+        elements.messageInputContainer.style.display = 'flex';
+
+        if (isMobile()) {
+            elements.sidebar.classList.add('hidden');
         }
 
-        // --- LOAD PRIVATE MESSAGES ---
-        async function loadPrivateMessages(recipientId, recipientName) {
-            activeConversation = recipientId;
-            elements.chatHeader.style.display = 'flex';
-            elements.chatUserName.textContent = recipientName;
-            elements.chatUserStatus.textContent = onlineUsers.has(recipientId) ? 'Online' : 'Offline';
-            elements.chatUserAvatar.classList.toggle('online', onlineUsers.has(recipientId));
-            elements.chatUserAvatar.textContent = recipientName.charAt(0).toUpperCase();
-            elements.messageInputContainer.style.display = 'flex';
+        elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages...</div>';
 
-            if (isMobile()) {
-                elements.sidebar.classList.add('hidden');
+        try {
+            // Fetch messages without joins
+            const { data: messages, error } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`and(user_id.eq.${currentUser.id},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUser.id})`)
+                .eq('is_private', true)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error loading messages:', error);
+                elements.messagesContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>Error Loading Messages</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                return;
             }
 
-            elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages...</div>';
+            debugLog('Messages loaded', { count: messages?.length || 0 });
 
-            try {
-                const { data: messages, error } = await supabase
-                    .from('messages')
-                    .select('*, profiles!messages_user_id_fkey(full_name)')
-                    .or(`and(user_id.eq.${currentUser.id},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUser.id})`)
-                    .eq('is_private', true)
-                    .order('created_at', { ascending: true });
+            // Extract user IDs to fetch profiles
+            const userIds = new Set();
+            if (messages && messages.length > 0) {
+                messages.forEach(msg => {
+                    userIds.add(msg.user_id);
+                });
+            }
 
-                if (error) throw error;
+            // Fetch profiles for these users
+            let profiles = [];
+            if (userIds.size > 0) {
+                const { data: profilesData, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, phone')
+                    .in('id', Array.from(userIds));
+                
+                if (profilesError) {
+                    console.error('Error fetching profiles:', profilesError);
+                } else {
+                    profiles = profilesData || [];
+                }
+            }
 
-                // Mark messages as read if they are from the other user and unread
+            // Create a map of user profiles
+            const profileMap = {};
+            profiles.forEach(profile => {
+                profileMap[profile.id] = profile;
+            });
+
+            // Mark messages as read if they are from the other user and unread
+            if (messages && messages.length > 0) {
                 const unreadMessageIds = messages
                     .filter(msg => msg.user_id !== currentUser.id && !msg.is_read)
                     .map(msg => msg.id);
 
                 if (unreadMessageIds.length > 0) {
+                    debugLog('Marking messages as read', { count: unreadMessageIds.length });
                     await markMessagesAsRead(unreadMessageIds);
                 }
+            }
 
-                // Render messages
-                if (messages.length === 0) {
-                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start a conversation!</div>';
-                    return;
-                }
+            // Render messages
+            if (!messages || messages.length === 0) {
+                elements.messagesContainer.innerHTML = `
+                    <div class="no-messages">
+                        <h3>No messages yet</h3>
+                        <p>Start a conversation with ${recipientName}!</p>
+                    </div>
+                `;
+                return;
+            }
 
-                elements.messagesContainer.innerHTML = messages.map(msg => `
+            elements.messagesContainer.innerHTML = messages.map(msg => {
+                const senderProfile = profileMap[msg.user_id] || { full_name: 'Unknown User' };
+                return `
                     <div class="message ${msg.user_id === currentUser.id ? 'sent' : 'received'}" data-message-id="${msg.id}">
                         <div class="message-header">
-                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(msg.profiles?.full_name || 'Unknown')}</span>
+                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(senderProfile.full_name)}</span>
                             <span>${formatTime(msg.created_at)}</span>
                         </div>
                         <div class="message-content">${escapeHtml(msg.content)}</div>
                         ${msg.user_id === currentUser.id ? `<button class="delete-btn" data-message-id="${msg.id}">Delete</button>` : ''}
                     </div>
-                `).join('');
+                `;
+            }).join('');
 
-                // Add event listeners to delete buttons
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const messageId = btn.getAttribute('data-message-id');
-                        deleteMessage(messageId);
-                    });
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const messageId = btn.getAttribute('data-message-id');
+                    deleteMessage(messageId);
                 });
+            });
 
-                // Scroll to bottom
-                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+            // Scroll to bottom
+            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
 
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                elements.messagesContainer.innerHTML = '<div class="error-message">Error loading messages 😕</div>';
-            }
+        } catch (error) {
+            console.error('Error in loadPrivateMessages:', error);
+            elements.messagesContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>Error Loading Messages</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    // --- LOAD COMMUNITY CHAT ---
+    async function loadCommunityChat() {
+        debugLog('Loading community chat');
+        
+        activeConversation = 'community';
+        elements.chatHeader.style.display = 'flex';
+        elements.chatUserName.textContent = 'Community Chat';
+        elements.chatUserStatus.textContent = 'Public';
+        elements.chatUserAvatar.textContent = 'C';
+        elements.chatUserAvatar.classList.remove('online');
+        elements.chatUserContact.style.display = 'none';
+        elements.messageInputContainer.style.display = 'flex';
+
+        if (isMobile()) {
+            elements.sidebar.classList.add('hidden');
         }
 
-        // --- LOAD COMMUNITY CHAT ---
-        async function loadCommunityChat() {
-            activeConversation = 'community';
-            elements.chatHeader.style.display = 'flex';
-            elements.chatUserName.textContent = 'Community Chat';
-            elements.chatUserStatus.textContent = 'Public';
-            elements.chatUserAvatar.textContent = 'C';
-            elements.chatUserAvatar.classList.remove('online');
-            elements.messageInputContainer.style.display = 'flex';
+        elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages...</div>';
 
-            if (isMobile()) {
-                elements.sidebar.classList.add('hidden');
-            }
+        try {
+            // Fetch messages without joins
+            const { data: messages, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('is_private', false)
+                .order('created_at', { ascending: true });
 
-            elements.messagesContainer.innerHTML = '<div class="loading-spinner">Loading messages...</div>';
-
-            try {
-                const { data: messages, error } = await supabase
-                    .from('messages')
-                    .select('*, profiles!messages_user_id_fkey(full_name)')
-                    .eq('is_private', false)
-                    .order('created_at', { ascending: true });
-
-                if (error) throw error;
-
-                // Render messages
-                if (messages.length === 0) {
-                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages in the community chat yet.</div>';
-                    return;
-                }
-
-                elements.messagesContainer.innerHTML = messages.map(msg => `
-                    <div class="message ${msg.user_id === currentUser.id ? 'sent' : 'received'}" data-message-id="${msg.id}">
-                        <div class="message-header">
-                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(msg.profiles?.full_name || 'Unknown')}</span>
-                            <span>${formatTime(msg.created_at)}</span>
-                        </div>
-                        <div class="message-content">${escapeHtml(msg.content)}</div>
-                        ${msg.user_id === currentUser.id ? `<button class="delete-btn" data-message-id="${msg.id}">Delete</button>` : ''}
-                    </div>
-                `).join('');
-
-                // Add event listeners to delete buttons
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const messageId = btn.getAttribute('data-message-id');
-                        deleteMessage(messageId);
-                    });
-                });
-
-                // Scroll to bottom
-                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
-
-            } catch (error) {
+            if (error) {
                 console.error('Error loading community messages:', error);
-                elements.messagesContainer.innerHTML = '<div class="error-message">Error loading messages 😕</div>';
+                elements.messagesContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>Error Loading Community Messages</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                return;
             }
+
+            debugLog('Community messages loaded', { count: messages?.length || 0 });
+
+            // Extract user IDs to fetch profiles
+            const userIds = new Set();
+            if (messages && messages.length > 0) {
+                messages.forEach(msg => {
+                    userIds.add(msg.user_id);
+                });
+            }
+
+            // Fetch profiles for these users
+            let profiles = [];
+            if (userIds.size > 0) {
+                const { data: profilesData, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, phone')
+                    .in('id', Array.from(userIds));
+                
+                if (profilesError) {
+                    console.error('Error fetching profiles:', profilesError);
+                } else {
+                    profiles = profilesData || [];
+                }
+            }
+
+            // Create a map of user profiles
+            const profileMap = {};
+            profiles.forEach(profile => {
+                profileMap[profile.id] = profile;
+            });
+
+            // Render messages
+            if (!messages || messages.length === 0) {
+                elements.messagesContainer.innerHTML = `
+                    <div class="no-messages">
+                        <h3>No messages in the community chat yet.</h3>
+                        <p>Be the first to say something!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.messagesContainer.innerHTML = messages.map(msg => {
+                const senderProfile = profileMap[msg.user_id] || { full_name: 'Unknown User' };
+                return `
+                    <div class="message ${msg.user_id === currentUser.id ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                        <div class="message-header">
+                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(senderProfile.full_name)}</span>
+                            <span>${formatTime(msg.created_at)}</span>
+                        </div>
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        ${msg.user_id === currentUser.id ? `<button class="delete-btn" data-message-id="${msg.id}">Delete</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const messageId = btn.getAttribute('data-message-id');
+                    deleteMessage(messageId);
+                });
+            });
+
+            // Scroll to bottom
+            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+        } catch (error) {
+            console.error('Error in loadCommunityChat:', error);
+            elements.messagesContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>Error Loading Community Messages</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
         }
+    }
 
-        // --- MARK MESSAGES AS READ ---
-        async function markMessagesAsRead(messageIds) {
-            try {
-                const { error } = await supabase
-                    .from('messages')
-                    .update({ is_read: true })
-                    .in('id', messageIds);
+    // --- MARK MESSAGES AS READ ---
+    async function markMessagesAsRead(messageIds) {
+        debugLog('Marking messages as read', { count: messageIds.length });
+        
+        try {
+            const { error } = await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .in('id', messageIds);
 
-                if (error) throw error;
-            } catch (error) {
+            if (error) {
                 console.error('Error marking messages as read:', error);
             }
+        } catch (error) {
+            console.error('Error in markMessagesAsRead:', error);
         }
+    }
 
-        // --- DELETE MESSAGE ---
-        async function deleteMessage(messageId) {
-            try {
-                const { error } = await supabase
-                    .from('messages')
-                    .delete()
-                    .eq('id', messageId);
+    // --- DELETE MESSAGE ---
+    async function deleteMessage(messageId) {
+        debugLog('Deleting message', { messageId });
+        
+        try {
+            const { error } = await supabase
+                .from('messages')
+                .delete()
+                .eq('id', messageId);
 
-                if (error) throw error;
-
-                // Remove the message from the UI
-                const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
-                if (messageElement) {
-                    messageElement.remove();
-                }
-
-                showToast('Message deleted ✅');
-            } catch (error) {
+            if (error) {
                 console.error('Error deleting message:', error);
                 showToast('Error deleting message 😕', 'error');
+                return;
             }
+
+            // Remove the message from the UI
+            const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                messageElement.remove();
+            }
+
+            showToast('Message deleted ✅');
+        } catch (error) {
+            console.error('Error in deleteMessage:', error);
+            showToast('Error deleting message 😕', 'error');
+        }
+    }
+
+    // --- MESSAGE FORM SUBMIT ---
+    elements.messageForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const content = elements.messageInput.value.trim();
+        if (!content) return showToast('Please enter a message 😕', 'error');
+
+        const messageData = {
+            content,
+            user_id: currentUser.id,
+            is_private: activeConversation !== 'community',
+            is_read: false
+        };
+        
+        if (messageData.is_private) {
+            messageData.recipient_id = activeConversation;
         }
 
-        elements.messageForm.addEventListener('submit', async e => {
-            e.preventDefault();
-            const content = elements.messageInput.value.trim();
-            if (!content) return showToast('Please enter a message 😕', 'error');
+        debugLog('Sending message', messageData);
 
-            const user = await checkAuth();
-            if (!user) return;
-
-            const messageData = {
-                content,
-                user_id: user.id,
-                is_private: activeConversation !== 'community',
-                is_read: false
-            };
-            if (messageData.is_private) messageData.recipient_id = activeConversation;
-
+        try {
             const { error } = await supabase.from('messages').insert([messageData]);
-            if (error) return showToast(`Error sending message: ${error.message} 😕`, 'error');
+            if (error) {
+                console.error('Error sending message:', error);
+                showToast(`Error sending message: ${error.message} 😕`, 'error');
+                return;
+            }
 
             elements.messageInput.value = '';
-            if (activeConversation === 'community') loadCommunityChat();
-            else loadPrivateMessages(activeConversation, elements.chatUserName.textContent);
-        });
+            
+            // Refresh the chat
+            if (activeConversation === 'community') {
+                loadCommunityChat();
+            } else {
+                loadPrivateMessages(activeConversation, elements.chatUserName.textContent);
+            }
+        } catch (error) {
+            console.error('Error in message form submit:', error);
+            showToast('Error sending message 😕', 'error');
+        }
+    });
 
-        // --- TAB BUTTONS ---
-        elements.tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                elements.tabBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeTab = btn.getAttribute('data-tab');
-                activeConversation = null;
-                elements.chatHeader.style.display = 'none';
-                elements.messageInputContainer.style.display = 'none';
-                elements.messagesContainer.innerHTML = '<div class="no-messages">Select a conversation to start chatting</div>';
-                loadConversations();
-            });
-        });
-
-        // --- BACK TO INBOX ---
-        elements.backToInboxBtn.addEventListener('click', () => {
-            elements.sidebar.classList.remove('hidden');
+    // --- TAB BUTTONS ---
+    elements.tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            elements.tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTab = btn.getAttribute('data-tab');
+            activeConversation = null;
             elements.chatHeader.style.display = 'none';
             elements.messageInputContainer.style.display = 'none';
             elements.messagesContainer.innerHTML = '<div class="no-messages">Select a conversation to start chatting</div>';
-            activeConversation = null;
+            loadConversations();
         });
+    });
 
-        // --- LOGOUT ---
-        elements.logoutBtn.addEventListener('click', async () => {
-            try {
-                showToast('Logging out... ⏳', 'warning');
-                await supabase.auth.signOut();
-                showToast('👋 Logged out successfully ✅');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Error logging out. Please try again. 😕', 'error');
-            }
-        });
+    // --- BACK TO INBOX ---
+    elements.backToInboxBtn.addEventListener('click', () => {
+        elements.sidebar.classList.remove('hidden');
+        elements.chatHeader.style.display = 'none';
+        elements.messageInputContainer.style.display = 'none';
+        elements.messagesContainer.innerHTML = '<div class="no-messages">Select a conversation to start chatting</div>';
+        activeConversation = null;
+    });
 
-        // --- SEARCH INPUT ---
-        elements.searchInput.addEventListener('input', debounce(() => {
-            loadConversations(elements.searchInput.value);
-        }, 300));
+    // --- LOGOUT ---
+    elements.logoutBtn.addEventListener('click', async () => {
+        try {
+            showToast('Logging out... ⏳', 'warning');
+            await supabase.auth.signOut();
+            showToast('👋 Logged out successfully ✅');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        } catch (error) {
+            console.error('Logout error:', error);
+            showToast('Error logging out. Please try again. 😕', 'error');
+        }
+    });
 
-        // --- INIT APP ---
-        async function initApp() {
+    // --- SEARCH INPUT ---
+    elements.searchInput.addEventListener('input', debounce(() => {
+        loadConversations(elements.searchInput.value);
+    }, 300));
+
+    // --- CLEANUP SUBSCRIPTIONS ---
+    function cleanupSubscriptions() {
+        if (presenceChannel) {
+            supabase.removeChannel(presenceChannel);
+            presenceChannel = null;
+        }
+        
+        if (messagesChannel) {
+            supabase.removeChannel(messagesChannel);
+            messagesChannel = null;
+        }
+    }
+
+    // --- INIT APP ---
+    async function initApp() {
+        debugLog('Initializing app');
+        
+        try {
             currentUser = await checkAuth();
             if (!currentUser) return;
 
-            const channel = supabase.channel('online-users')
+            debugLog('User authenticated', { userId: currentUser.id });
+
+            // Set up presence channel
+            presenceChannel = supabase.channel('online-users')
                 .on('presence', { event: 'sync' }, () => {
-                    onlineUsers = new Set(Object.keys(channel.presenceState()));
+                    onlineUsers = new Set(Object.keys(presenceChannel.presenceState()));
                     if (activeConversation && activeConversation !== 'community') {
                         elements.chatUserStatus.textContent = onlineUsers.has(activeConversation) ? 'Online' : 'Offline';
                         elements.chatUserAvatar.classList.toggle('online', onlineUsers.has(activeConversation));
@@ -833,16 +1153,30 @@
                 })
                 .subscribe(async status => {
                     if (status === 'SUBSCRIBED') {
-                        await channel.track({ user_id: currentUser.id, online_at: new Date().toISOString() });
+                        await presenceChannel.track({ 
+                            user_id: currentUser.id, 
+                            online_at: new Date().toISOString() 
+                        });
                     }
                 });
 
-            supabase.channel('messages')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+            // Set up messages channel
+            messagesChannel = supabase.channel('messages')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'messages' 
+                }, () => {
+                    debugLog('Postgres change detected');
                     if (activeConversation) {
-                        if (activeConversation === 'community') loadCommunityChat();
-                        else loadPrivateMessages(activeConversation, elements.chatUserName.textContent);
-                    } else loadConversations();
+                        if (activeConversation === 'community') {
+                            loadCommunityChat();
+                        } else {
+                            loadPrivateMessages(activeConversation, elements.chatUserName.textContent);
+                        }
+                    } else {
+                        loadConversations();
+                    }
                 })
                 .subscribe();
 
@@ -852,18 +1186,52 @@
             const productTitle = sessionStorage.getItem('chatProductTitle');
 
             if (sellerId && sellerName && productTitle) {
+                debugLog('Auto-opening chat', { sellerId, sellerName, productTitle });
+                
                 elements.tabBtns.forEach(btn => btn.classList.remove('active'));
                 document.querySelector('.tab-btn[data-tab="inbox"]').classList.add('active');
                 activeTab = 'inbox';
-                await loadPrivateMessages(sellerId, sellerName);
+                
+                // Get user profile to fetch phone number
+                try {
+                    const { data: profile, error } = await supabase
+                        .from('profiles')
+                        .select('phone')
+                        .eq('id', sellerId)
+                        .single();
+                    
+                    if (error) {
+                        console.error('Error fetching user profile:', error);
+                        loadPrivateMessages(sellerId, sellerName);
+                    } else {
+                        debugLog('User profile fetched', { phone: profile.phone });
+                        loadPrivateMessages(sellerId, sellerName, profile.phone);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user profile:', error);
+                    loadPrivateMessages(sellerId, sellerName);
+                }
+                
                 elements.messageInput.value = `Hi ${sellerName}, I'm interested in your product: ${productTitle}`;
                 sessionStorage.removeItem('chatSellerId');
                 sessionStorage.removeItem('chatSellerName');
                 sessionStorage.removeItem('chatProductTitle');
-            } else loadConversations();
+            } else {
+                loadConversations();
+            }
+        } catch (error) {
+            console.error('Error in initApp:', error);
+            showToast('Error initializing app 😕', 'error');
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+    
+    // Cleanup subscriptions when page is unloaded
+    window.addEventListener('beforeunload', cleanupSubscriptions);
+</script>
+
+   
 </body>
 </html>

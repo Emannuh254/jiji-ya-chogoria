@@ -143,32 +143,38 @@
 
             .nav-links {
                 position: fixed;
-                top: var(--header-height);
+                top: 0;
                 left: 0;
                 width: 100%;
-                height: calc(100vh - var(--header-height));
-                background: var(--bg-secondary);
+                height: 100vh;
+                background-color: rgba(0, 0, 0, 0.95);
                 flex-direction: column;
-                padding: 20px;
+                align-items: center;
+                justify-content: center;
                 gap: 20px;
+                padding-top: 60px;
                 transform: translateY(-100%);
-                opacity: 0;
-                visibility: hidden;
-                z-index: 99;
-                overflow-y: auto;
+                transition: transform 0.3s ease;
+                z-index: 9999;
             }
 
             .nav-links.active {
                 transform: translateY(0);
-                opacity: 1;
-                visibility: visible;
             }
 
             .nav-links a {
+                color: #FFA500;
+                font-size: 1.5rem;
+                text-decoration: none;
+                transition: color 0.2s;
                 width: 100%;
                 text-align: center;
-                font-size: 1.2rem;
                 padding: 16px 0;
+            }
+
+            .nav-links a:hover {
+                color: #ffcc66;
+                background: none;
             }
         }
 
@@ -256,46 +262,23 @@
             .seller-avatar { width: 44px; height: 44px; font-size: 1.3rem; }
             .seller-name { font-size: 1.2rem; }
             .toast { right: 15px; left: 15px; min-width: auto; }
+            
+            /* Improved mobile menu for small screens */
+            .mobile-menu-toggle {
+                font-size: 2.2rem;
+                padding: 12px;
+            }
+            
+            .nav-links a {
+                font-size: 1.8rem;
+                padding: 20px 0;
+            }
         }
 
         /* ====== Performance Optimizations ====== */
         @media (prefers-reduced-motion: reduce) {
             * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
         }
-                /* Navbar Overlay for Mobile */
-        #nav-links {
-            position: fixed; /* sit above everything */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh; /* full screen */
-            background-color: rgba(0, 0, 0, 0.95); /* semi-transparent dark overlay */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding-top: 60px;
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
-            z-index: 9999; /* on top of chats */
-        }
-
-        #nav-links.active {
-            transform: translateY(0);
-        }
-
-        #nav-links a {
-            color: #FFA500; /* orange accents */
-            font-size: 1.5rem;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        #nav-links a:hover {
-            color: #ffcc66;
-        }
-
     </style>
 </head>
 <body>
@@ -303,7 +286,7 @@
         <div class="container">
             <nav class="navbar" role="navigation">
                 <a href="dashboard.html" class="logo" aria-label="Jiji ya Chogoria Home">Jiji ya Chogoria</a>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
                 <ul class="nav-links" id="nav-links">
                     <li><a href="dashboard.html" aria-label="Dashboard">Dashboard</a></li>
                     <li><a href="chat.html" class="active" aria-label="Chat">Chat</a></li>
@@ -351,18 +334,13 @@
     </footer>
 
     <script>
-        if (!window.supabase) {
-            document.body.innerHTML = '<div class="toast error">❌ Failed to load Supabase. Please check your network and refresh.</div>';
-            throw new Error('Supabase script not loaded');
-        }
-
-        const supabase = window.supabase.createClient(
-            'https://lrezerxsbuekkhmpverr.supabase.co',
-            'YOUR_ANON_KEY'
-        );
+        // Initialize Supabase with the correct credentials
+        const supabaseUrl = 'https://lrezerxsbuekkhmpverr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const elements = {
-            mobileMenuToggle: document.querySelector('.mobile-menu-toggle'),
+            mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
             navLinks: document.getElementById('nav-links'),
             sidebar: document.getElementById('sidebar'),
             conversationsContainer: document.getElementById('conversations-container'),
@@ -398,12 +376,13 @@
             return div.innerHTML;
         };
 
-        // --- NAVBAR TOGGLE ---
+        // --- NAVBAR TOGGLE (Fixed to match settings.html) ---
         elements.mobileMenuToggle.addEventListener('click', () => {
             const isActive = elements.navLinks.classList.toggle('active');
             document.body.style.overflow = isActive ? 'hidden' : '';
         });
 
+        // Close mobile menu when clicking on a link
         elements.navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 elements.navLinks.classList.remove('active');
@@ -429,33 +408,285 @@
             setTimeout(() => toast.remove(), 3000);
         };
 
-        // --- AUTH CHECK ---
+        // --- AUTH CHECK (Fixed to match settings.html) ---
         async function checkAuth() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) {
-                showToast('Please log in', 'error');
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (!user) {
+                    showToast('Please log in to access chat', 'error');
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                
+                return user;
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showToast('Authentication failed. Please log in again.', 'error');
                 window.location.href = 'index.html';
                 return null;
             }
-
-            const { data: profile, error: profileError } = await supabase.from('profiles').select('id, full_name').eq('id', user.id).single();
-            if (profileError) showToast(`Error fetching profile: ${profileError.message}`, 'error');
-
-            if (!profile) {
-                const { error: insertError } = await supabase.from('profiles').insert([{
-                    id: user.id,
-                    full_name: user.user_metadata?.full_name || user.email || 'Anonymous'
-                }]);
-                if (insertError) showToast(`Error creating profile: ${insertError.message}`, 'error');
-            }
-
-            return user;
         }
 
-        // --- REST OF CHAT FUNCTIONS ---
-        // loadConversations, loadMessages, loadPrivateMessages, loadCommunityChat,
-        // markMessagesAsRead, deleteMessage
-        // (keep the same as your existing code but remove duplicate mobileMenuToggle listeners)
+        // --- LOAD CONVERSATIONS ---
+        async function loadConversations(searchTerm = '') {
+            elements.conversationsContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                if (activeTab === 'inbox') {
+                    // Fetch private conversations
+                    const { data: messages, error } = await supabase
+                        .from('messages')
+                        .select('*, profiles!messages_recipient_id_fkey(full_name)')
+                        .or(`user_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+                        .eq('is_private', true)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    // Group messages by the other user
+                    const conversationsMap = new Map();
+                    messages.forEach(msg => {
+                        const otherUserId = msg.user_id === currentUser.id ? msg.recipient_id : msg.user_id;
+                        if (!conversationsMap.has(otherUserId)) {
+                            conversationsMap.set(otherUserId, {
+                                id: otherUserId,
+                                name: msg.profiles?.full_name || 'Unknown',
+                                lastMessage: msg.content,
+                                lastMessageTime: msg.created_at,
+                                unread: msg.user_id !== currentUser.id && !msg.is_read
+                            });
+                        }
+                    });
+
+                    let conversations = Array.from(conversationsMap.values());
+
+                    // Filter by search term if provided
+                    if (searchTerm) {
+                        conversations = conversations.filter(conv => 
+                            conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+                    }
+
+                    // Render conversations
+                    if (conversations.length === 0) {
+                        elements.conversationsContainer.innerHTML = '<div class="no-conversations">No conversations found</div>';
+                        return;
+                    }
+
+                    elements.conversationsContainer.innerHTML = conversations.map(conv => `
+                        <div class="conversation" data-user-id="${conv.id}">
+                            <div class="conversation-avatar ${onlineUsers.has(conv.id) ? 'online' : ''}">${conv.name.charAt(0).toUpperCase()}</div>
+                            <div class="conversation-details">
+                                <div class="conversation-header">
+                                    <div class="conversation-name">${escapeHtml(conv.name)}</div>
+                                    <div class="conversation-time">${formatTime(conv.lastMessageTime)}</div>
+                                </div>
+                                <div class="conversation-preview">${escapeHtml(conv.lastMessage)}</div>
+                            </div>
+                            ${conv.unread ? '<div class="unread-indicator">New</div>' : ''}
+                        </div>
+                    `).join('');
+
+                    // Add click event to each conversation
+                    document.querySelectorAll('.conversation').forEach(conv => {
+                        conv.addEventListener('click', () => {
+                            const userId = conv.getAttribute('data-user-id');
+                            const userName = conv.querySelector('.conversation-name').textContent;
+                            loadPrivateMessages(userId, userName);
+                        });
+                    });
+
+                } else if (activeTab === 'community') {
+                    // For community, we just show one conversation for the community chat
+                    elements.conversationsContainer.innerHTML = `
+                        <div class="conversation" data-conversation-id="community">
+                            <div class="conversation-avatar">C</div>
+                            <div class="conversation-details">
+                                <div class="conversation-header">
+                                    <div class="conversation-name">Community Chat</div>
+                                    <div class="conversation-time">Now</div>
+                                </div>
+                                <div class="conversation-preview">Join the community conversation</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add click event to community conversation
+                    document.querySelector('.conversation').addEventListener('click', () => {
+                        loadCommunityChat();
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                elements.conversationsContainer.innerHTML = '<div class="error-message">Error loading conversations</div>';
+            }
+        }
+
+        // --- LOAD PRIVATE MESSAGES ---
+        async function loadPrivateMessages(recipientId, recipientName) {
+            activeConversation = recipientId;
+            elements.chatHeader.style.display = 'flex';
+            elements.chatUserName.textContent = recipientName;
+            elements.chatUserStatus.textContent = onlineUsers.has(recipientId) ? 'Online' : 'Offline';
+            elements.chatUserAvatar.classList.toggle('online', onlineUsers.has(recipientId));
+            elements.chatUserAvatar.textContent = recipientName.charAt(0).toUpperCase();
+            elements.messageInputContainer.style.display = 'flex';
+
+            if (isMobile()) {
+                elements.sidebar.classList.add('hidden');
+            }
+
+            elements.messagesContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select('*, profiles!messages_user_id_fkey(full_name)')
+                    .or(`and(user_id.eq.${currentUser.id},recipient_id.eq.${recipientId}),and(user_id.eq.${recipientId},recipient_id.eq.${currentUser.id})`)
+                    .eq('is_private', true)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                // Mark messages as read if they are from the other user and unread
+                const unreadMessageIds = messages
+                    .filter(msg => msg.user_id !== currentUser.id && !msg.is_read)
+                    .map(msg => msg.id);
+
+                if (unreadMessageIds.length > 0) {
+                    await markMessagesAsRead(unreadMessageIds);
+                }
+
+                // Render messages
+                if (messages.length === 0) {
+                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Start a conversation!</div>';
+                    return;
+                }
+
+                elements.messagesContainer.innerHTML = messages.map(msg => `
+                    <div class="message ${msg.user_id === currentUser.id ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                        <div class="message-header">
+                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(msg.profiles?.full_name || 'Unknown')}</span>
+                            <span>${formatTime(msg.created_at)}</span>
+                        </div>
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        ${msg.user_id === currentUser.id ? `<button class="delete-btn" data-message-id="${msg.id}">Delete</button>` : ''}
+                    </div>
+                `).join('');
+
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const messageId = btn.getAttribute('data-message-id');
+                        deleteMessage(messageId);
+                    });
+                });
+
+                // Scroll to bottom
+                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                elements.messagesContainer.innerHTML = '<div class="error-message">Error loading messages</div>';
+            }
+        }
+
+        // --- LOAD COMMUNITY CHAT ---
+        async function loadCommunityChat() {
+            activeConversation = 'community';
+            elements.chatHeader.style.display = 'flex';
+            elements.chatUserName.textContent = 'Community Chat';
+            elements.chatUserStatus.textContent = 'Public';
+            elements.chatUserAvatar.textContent = 'C';
+            elements.chatUserAvatar.classList.remove('online');
+            elements.messageInputContainer.style.display = 'flex';
+
+            if (isMobile()) {
+                elements.sidebar.classList.add('hidden');
+            }
+
+            elements.messagesContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select('*, profiles!messages_user_id_fkey(full_name)')
+                    .eq('is_private', false)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                // Render messages
+                if (messages.length === 0) {
+                    elements.messagesContainer.innerHTML = '<div class="no-messages">No messages in the community chat yet.</div>';
+                    return;
+                }
+
+                elements.messagesContainer.innerHTML = messages.map(msg => `
+                    <div class="message ${msg.user_id === currentUser.id ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                        <div class="message-header">
+                            <span>${msg.user_id === currentUser.id ? 'You' : escapeHtml(msg.profiles?.full_name || 'Unknown')}</span>
+                            <span>${formatTime(msg.created_at)}</span>
+                        </div>
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        ${msg.user_id === currentUser.id ? `<button class="delete-btn" data-message-id="${msg.id}">Delete</button>` : ''}
+                    </div>
+                `).join('');
+
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const messageId = btn.getAttribute('data-message-id');
+                        deleteMessage(messageId);
+                    });
+                });
+
+                // Scroll to bottom
+                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+            } catch (error) {
+                console.error('Error loading community messages:', error);
+                elements.messagesContainer.innerHTML = '<div class="error-message">Error loading messages</div>';
+            }
+        }
+
+        // --- MARK MESSAGES AS READ ---
+        async function markMessagesAsRead(messageIds) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .in('id', messageIds);
+
+                if (error) throw error;
+            } catch (error) {
+                console.error('Error marking messages as read:', error);
+            }
+        }
+
+        // --- DELETE MESSAGE ---
+        async function deleteMessage(messageId) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .delete()
+                    .eq('id', messageId);
+
+                if (error) throw error;
+
+                // Remove the message from the UI
+                const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    messageElement.remove();
+                }
+
+                showToast('Message deleted');
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showToast('Error deleting message', 'error');
+            }
+        }
 
         elements.messageForm.addEventListener('submit', async e => {
             e.preventDefault();
@@ -506,9 +737,17 @@
 
         // --- LOGOUT ---
         elements.logoutBtn.addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            showToast('Logged out successfully');
-            window.location.href = 'index.html';
+            try {
+                showToast('Logging out...', 'warning');
+                await supabase.auth.signOut();
+                showToast('👋 Logged out successfully');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Error logging out. Please try again.', 'error');
+            }
         });
 
         // --- SEARCH INPUT ---
@@ -563,7 +802,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', initApp);
-        </script>
-
+    </script>
 </body>
 </html>

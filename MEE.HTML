@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aviator — Modern Jet Demo (Audio + Money + Cheers)</title>
+  <style>
+    /* Reset */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:linear-gradient(#7ec0ff 0%, #cfeaff 60%, #f7fbff 100%);font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#04213b}
+
+    /* Stage */
+    .stage{position:relative;width:100%;height:100vh;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6vh}
+
+    /* Sky layers for parallax */
+    .sky{position:absolute;inset:0;pointer-events:none}
+    .sun{position:absolute;right:6%;top:6%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff8e6, #ffd36b 40%, #ffb84d 100%);opacity:0.95;filter:blur(2px)}
+
+    /* Clouds */
+    .clouds{position:absolute;inset:0}
+    .cloud{position:absolute;border-radius:50%;opacity:0.95;filter:blur(6px);background:linear-gradient(180deg,#ffffff,#eef7ff);box-shadow:0 10px 30px rgba(0,0,0,0.06)}
+
+    /* Ground */
+    .ground{position:absolute;left:0;right:0;bottom:0;height:18%;background:linear-gradient(180deg,#cfeef1,#b8e6ff);transform:skewY(-3deg);filter:brightness(0.96)}
+
+    /* Controls */
+    .controls{position:absolute;left:14px;top:14px;background:rgba(255,255,255,0.86);backdrop-filter: blur(6px);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(6,24,40,0.08);z-index:60}
+    .controls button{border:0;background:#0b76ff;color:white;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;letter-spacing:0.3px}
+    .controls button.ghost{background:transparent;color:#0b76ff;border:1px solid rgba(11,118,255,0.12)}
+    .mute{background:transparent;border-radius:8px;padding:6px 8px;border:1px solid rgba(6,24,40,0.06);cursor:pointer}
+
+    .meter{font-weight:800;color:#05204a;padding-left:8px;min-width:120px;text-align:right}
+
+    /* Plane wrapper - zoomed out perspective */
+    .plane-wrap{position:absolute;left:50%;bottom:22%;transform-origin:center center;will-change:transform;pointer-events:none;z-index:40}
+    .plane{width:340px;height:auto;transform-origin:55% 60%;filter:drop-shadow(0 18px 36px rgba(2,18,40,0.18));}
+
+    /* Streak for speed */
+    .streak{position:absolute;left:0;top:46%;width:420px;height:10px;border-radius:999px;opacity:0.22;transform-origin:left;filter:blur(6px)}
+
+    /* Smoke / contrail container */
+    #contrails{position:absolute;left:0;top:0;pointer-events:none;z-index:30}
+
+    /* Money fly-away container */
+    .money-wrap{position:absolute;left:50%;top:12%;transform:translateX(-50%);pointer-events:none;z-index:80}
+    .bill{position:absolute;width:78px;height:40px;border-radius:6px;background:linear-gradient(180deg,#e6ffef,#d1ffd9);box-shadow:0 6px 18px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;font-weight:800;color:#0a5b2b;border:2px solid rgba(10,91,43,0.08)}
+
+    /* Crowd overlay (tiny silhouettes) */
+    .crowd{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);display:flex;gap:6px;z-index:50}
+    .person{width:8px;height:18px;background:#123;opacity:0.65;border-radius:2px}
+
+    /* Flash effect */
+    .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%, rgba(255,255,255,0.28), rgba(255,255,255,0) 30%);opacity:0;pointer-events:none;z-index:90}
+
+    /* Responsive tweaks */
+    @media (max-width:900px){.plane{width:260px}.streak{width:300px}.controls{left:8px;top:8px;padding:8px}.meter{min-width:84px}}
+    @media (max-width:520px){.plane{width:190px}.plane-wrap{bottom:16%}.controls{top:auto;bottom:12px;left:50%;transform:translateX(-50%)} .crowd{display:none}}
+
+    /* Animations - money + confetti-like float */
+    @keyframes floatUp{
+      0%{transform:translateY(0) rotate(0deg);opacity:1}
+      60%{opacity:1}
+      100%{transform:translateY(-200px) rotate(360deg);opacity:0}
+    }
+
+    @keyframes swooshLeft{
+      0%{transform:translateX(0) rotate(-2deg)}
+      100%{transform:translateX(-220px) rotate(-28deg);opacity:0}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="sky">
+      <div class="sun"></div>
+      <div class="clouds" id="clouds"></div>
+    </div>
+
+    <div class="ground"></div>
+
+    <div class="plane-wrap" id="planeWrap" aria-hidden="true">
+      <div class="streak" id="streak" style="background:linear-gradient(90deg, rgba(255,255,255,0), rgba(160,200,255,0.22), rgba(255,255,255,0))"></div>
+
+      <!-- Modern jet SVG (sleek) -->
+      <svg class="plane" id="plane" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sleek jet">
+        <defs>
+          <linearGradient id="jet-body" x1="0" x2="1">
+            <stop offset="0%" stop-color="#f7fbff"/>
+            <stop offset="100%" stop-color="#d6e9ff"/>
+          </linearGradient>
+          <linearGradient id="jet-accent" x1="0" x2="1">
+            <stop offset="0%" stop-color="#0b76ff"/>
+            <stop offset="100%" stop-color="#0a58d1"/>
+          </linearGradient>
+        </defs>
+
+        <!-- fuselage -->
+        <g transform="translate(10,8)">
+          <path d="M20 58 Q60 34 160 28 Q220 26 260 44 Q200 52 160 66 Q110 78 40 70 Z" fill="url(#jet-body)" stroke="#d0e9ff" stroke-width="1"/>
+
+          <!-- cockpit glass -->
+          <path d="M155 30 q18 -2 32 6 q-6 8 -18 10 q-18 2 -26 -8 z" fill="#9fc9ff" opacity="0.96"/>
+
+          <!-- wing -->
+          <path d="M80 54 L20 30 L95 44 L88 68 Z" fill="#eef6ff" stroke="#d6ecff"/>
+
+          <!-- tail wing -->
+          <path d="M28 28 L22 12 L54 26 Z" fill="url(#jet-accent)"/>
+
+          <!-- engine pods (stylized) -->
+          <g transform="translate(170,58)">
+            <ellipse cx="20" cy="8" rx="22" ry="8" fill="#cfe6ff"/>
+            <rect x="-6" y="-6" width="40" height="18" rx="9" fill="#eaf6ff"/>
+          </g>
+
+          <!-- small accent stripe -->
+          <path d="M110 48 q40 -8 80 -2" stroke="url(#jet-accent)" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.95"/>
+        </g>
+      </svg>
+
+      <div id="contrails"></div>
+    </div>
+
+    <div class="money-wrap" id="moneyWrap"></div>
+
+    <div class="crowd" id="crowd"></div>
+
+    <div class="controls" id="controls">
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="startBtn">Start</button>
+        <button id="cashBtn" class="ghost">Cash out</button>
+        <button id="crashBtn" class="ghost">Force Crash</button>
+      </div>
+      <div style="margin-left:6px;display:flex;gap:12px;align-items:center">
+        <div class="meter"> <div style="font-size:12px;opacity:0.8">Multiplier</div> <div id="mult" style="font-size:20px">1.00×</div></div>
+        <button id="mute" class="mute">🔊</button>
+      </div>
+    </div>
+
+    <div class="flash" id="flash"></div>
+  </div>
+
+  <script>
+    // Elements
+    const planeWrap = document.getElementById('planeWrap');
+    const plane = document.getElementById('plane');
+    const contrails = document.getElementById('contrails');
+    const startBtn = document.getElementById('startBtn');
+    const cashBtn = document.getElementById('cashBtn');
+    const crashBtn = document.getElementById('crashBtn');
+    const multEl = document.getElementById('mult');
+    const streak = document.getElementById('streak');
+    const flash = document.getElementById('flash');
+    const moneyWrap = document.getElementById('moneyWrap');
+    const crowd = document.getElementById('crowd');
+    const mute = document.getElementById('mute');
+
+    // State
+    let running = false, crashed = false, startTime = 0, raf = null, muted = false;
+
+    // Visual params
+    const params = { baseSpeed: 0.45, accel: 0.22, maxTilt: -14, minTilt: 6, smokeInterval: 110 };
+
+    // WebAudio setup (synthesized audio so no external files)
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let ctx = null;
+    let engineNode = null, windNode = null;
+
+    function ensureAudio(){
+      if(ctx) return;
+      ctx = new AudioCtx();
+
+      // master gain
+      const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+
+      // engine: low rumble using oscillator + bandpass + gain
+      const engineOsc = ctx.createOscillator(); engineOsc.type = 'sawtooth'; engineOsc.frequency.value = 40; // low
+      const engineGain = ctx.createGain(); engineGain.gain.value = 0.0; // start silent
+      const engineBP = ctx.createBiquadFilter(); engineBP.type = 'bandpass'; engineBP.frequency.value = 120; engineBP.Q.value = 0.6;
+      engineOsc.connect(engineBP); engineBP.connect(engineGain); engineGain.connect(master);
+      engineOsc.start();
+
+      // wind: noise buffer -> filter -> gain
+      const bufferSize = 2 * ctx.sampleRate;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+      const noiseSrc = ctx.createBufferSource(); noiseSrc.buffer = noiseBuffer; noiseSrc.loop = true;
+      const windFilter = ctx.createBiquadFilter(); windFilter.type = 'highpass'; windFilter.frequency.value = 600; windFilter.Q.value = 0.5;
+      const windGain = ctx.createGain(); windGain.gain.value = 0.0;
+      noiseSrc.connect(windFilter); windFilter.connect(windGain); windGain.connect(master);
+      noiseSrc.start();
+
+      // exposed nodes
+      engineNode = {osc: engineOsc, gain: engineGain, bp: engineBP};
+      windNode = {src: noiseSrc, gain: windGain, filter: windFilter};
+    }
+
+    // Crowd cheer synthesized: quick layered noise bursts and pitched tones for a cheerful timbre
+    function playCheer(){
+      if(muted) return;
+      ensureAudio();
+      const now = ctx.currentTime;
+
+      // bright tonal layer (multiple quick notes)
+      for(let i=0;i<6;i++){
+        const o = ctx.createOscillator(); o.type='triangle'; o.frequency.value = 440 + Math.random()*240 + i*20;
+        const g = ctx.createGain(); g.gain.value = 0.0001;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(now + i*0.02);
+        g.gain.exponentialRampToValueAtTime(0.25, now + i*0.02 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i*0.02 + 0.48);
+        o.stop(now + i*0.02 + 0.5);
+      }
+
+      // noise applause bursts
+      const bufferSize = ctx.sampleRate * 0.35;
+      const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = b.getChannelData(0); for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1)*Math.exp(-3*i/bufferSize);
+      const src = ctx.createBufferSource(); src.buffer=b; const fl = ctx.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=3800;
+      const g2 = ctx.createGain(); g2.gain.value=0.8; src.connect(fl); fl.connect(g2); g2.connect(ctx.destination);
+      src.start(now);
+      src.stop(now + 0.35);
+    }
+
+    // Money whoosh sound: highpass sweep of noise
+    function playMoneyWhoosh(){
+      if(muted) return; ensureAudio();
+      const now = ctx.currentTime;
+      // noise buffer
+      const bufferSize = ctx.sampleRate * 0.6;
+      const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = b.getChannelData(0); for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1); // white
+      const src = ctx.createBufferSource(); src.buffer=b; const filt = ctx.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=400;
+      const g = ctx.createGain(); g.gain.value = 0.0001; src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      src.start(now);
+      g.gain.exponentialRampToValueAtTime(0.9, now + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+      src.stop(now + 0.7);
+    }
+
+    // Crash explosion sound: deep sine + noise burst
+    function playExplosion(){
+      if(muted) return; ensureAudio();
+      const now = ctx.currentTime;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=80; const g = ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(ctx.destination);
+      o.start(now); g.gain.exponentialRampToValueAtTime(1.4, now + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.9); o.stop(now + 1.0);
+
+      // noise
+      const bufferSize = ctx.sampleRate * 0.8; const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate); const data = b.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1)*Math.exp(-3*i/bufferSize);
+      const src = ctx.createBufferSource(); src.buffer=b; const g2 = ctx.createGain(); g2.gain.value=0.9; const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2000;
+      src.connect(lp); lp.connect(g2); g2.connect(ctx.destination); src.start(now); src.stop(now + 0.8);
+    }
+
+    // Engine controls: smoothly ramp engine and wind based on 'throttle' (0..1)
+    function setThrottle(v){ if(!engineNode || !windNode) return; engineNode.gain.gain.linearRampToValueAtTime(0.0001 + v*0.9, ctx.currentTime + 0.06); engineNode.bp.frequency.linearRampToValueAtTime(80 + v*400, ctx.currentTime + 0.06); windNode.gain.gain.linearRampToValueAtTime(v*0.9, ctx.currentTime + 0.06); windNode.filter.frequency.linearRampToValueAtTime(400 + v*5000, ctx.currentTime + 0.06); }
+
+    // Utility: compute multiplier
+    function computeMultiplier(t){ const k = params.baseSpeed; return Math.min(9999, (1 + (Math.exp(k * t) - 1) * (1 + params.accel * t))); }
+
+    // Clouds creator
+    function makeCloud(x,y,scale,opacity,zIndex){ const c = document.createElement('div'); c.className='cloud'; c.style.width = 180 * scale + 'px'; c.style.height = 90 * scale + 'px'; c.style.left = x + '%'; c.style.top = y + '%'; c.style.opacity = opacity; c.style.zIndex = zIndex; document.getElementById('clouds').appendChild(c); const dur = 30000 + Math.random()*30000; c.animate([{transform:'translateX(0px)'},{transform:'translateX(' + (Math.random()*260-120) + 'px)'}],{duration:dur,iterations:Infinity,direction:'alternate',easing:'ease-in-out'}); }
+    for(let i=0;i<10;i++) makeCloud(2+Math.random()*90,3+Math.random()*55,0.6+Math.random()*1.2,0.5+Math.random()*0.5,i%2?1:2);
+
+    // Crowd silhouettes
+    function makeCrowd(){ for(let i=0;i<26;i++){ const p = document.createElement('div'); p.className='person'; p.style.height = (12 + Math.random()*18) + 'px'; p.style.width = (6 + Math.random()*6) + 'px'; p.style.opacity = 0.5 + Math.random()*0.4; crowd.appendChild(p); } }
+    makeCrowd();
+
+    // Contrail generator
+    function createContrail(x,y,scale){ const c = document.createElement('div'); c.style.position='absolute'; c.style.left = x + 'px'; c.style.top = y + 'px'; c.style.width = (6*scale) + 'px'; c.style.height = (6*scale) + 'px'; c.style.borderRadius='50%'; c.style.background='rgba(255,255,255,0.85)'; c.style.filter='blur(2px)'; c.style.opacity=0.9; contrails.appendChild(c); c.animate([{transform:'translateY(0px) scale(1)',opacity:0.9},{transform:'translateY(-160px) scale(2)',opacity:0}],{duration:1600 + Math.random()*600,easing:'cubic-bezier(.2,.8,.2,1)'}); setTimeout(()=>c.remove(),2200);
+    }
+
+    // Money visuals
+    function spawnMoneyBurst(){ const n = 10 + Math.floor(Math.random()*8); for(let i=0;i<n;i++){ const b = document.createElement('div'); b.className='bill'; moneyWrap.appendChild(b); const startX = (Math.random()*260 - 130); b.style.left = (startX) + 'px'; b.style.top = (Math.random()*40) + 'px'; b.textContent = 'KSh'; // localized token - you can change
+      // animation
+      const dur = 1100 + Math.random()*700; b.style.animation = `floatUp ${dur}ms cubic-bezier(.2,.8,.2,1)`; b.style.transformOrigin='center';
+      // slight horizontal sweep
+      b.animate([{transform:'translateX(0) rotate(0deg)'},{transform:`translateX(${(Math.random()*360-180)}px) rotate(${(Math.random()*720-360)}deg)`}],{duration:dur, easing:'linear'});
+      setTimeout(()=> b.remove(), dur+80);
+    } }
+
+    // Money whoosh visuals (sweeping bills across)
+    function spawnMoneySwoosh(){ const n = 6; for(let i=0;i<n;i++){ const b = document.createElement('div'); b.className='bill'; moneyWrap.appendChild(b); b.style.left = (i*48 - 140) + 'px'; b.style.top = (20 + Math.random()*40) + 'px'; b.textContent = '$'; b.style.animation = `swooshLeft ${900 + Math.random()*300}ms cubic-bezier(.2,.8,.2,1)`; setTimeout(()=> b.remove(), 1300); } }
+
+    // Main tick loop
+    function tick(now){ if(!running) return; if(!startTime) startTime = now; const t = (now - startTime)/1000; let mult = computeMultiplier(t); multEl.textContent = mult.toFixed(2) + '×';
+      // position
+      const heightPct = Math.min(140, Math.pow(mult,0.55) * 3.6);
+      const translateY = - (heightPct) ; const scale = 1 + Math.min(2.2, Math.log(mult+1)*0.18);
+      const tilt = Math.max(params.maxTilt, params.minTilt - Math.log(mult+1)*7);
+      planeWrap.style.transform = `translate(-50%, ${translateY}vh) scale(${scale}) rotate(${tilt}deg)`;
+      // streak
+      streak.style.transform = `scaleX(${Math.min(3.4, Math.log(mult+1)*0.78)}) translateX(-40px) rotate(${tilt/6}deg)`;
+      streak.style.opacity = Math.max(0.06, Math.min(0.72, Math.log(mult+1)*0.08));
+      // contrails
+      if(Math.floor(now/params.smokeInterval) % 2 === 0){ const rect = plane.getBoundingClientRect(); createContrail(rect.left + rect.width*0.06, rect.top + rect.height*0.6, 1 + Math.random()*0.6); }
+      // audio throttle by multiplier progression
+      const throttle = Math.min(1, Math.log(mult+1)/3.2 + 0.02);
+      if(ctx) setThrottle(throttle);
+      // tiny chance crash (disabled by default) - keep extremely low
+      if(!crashed && Math.random() < 0.0006 && t>1.6){ triggerCrash(now); }
+      raf = requestAnimationFrame(tick);
+    }
+
+    // Start
+    function start(){ if(running) return; running=true; crashed=false; startTime=0; startBtn.textContent='In Flight'; startBtn.disabled=true; cashBtn.disabled=false; crashBtn.disabled=false; if(!ctx) ensureAudio(); // ramp engine up fast
+      // startup ramp
+      setThrottle(0.12);
+      setTimeout(()=> setThrottle(0.42), 220);
+      // initial takeoff animation
+      planeWrap.animate([
+        { transform: 'translate(-50%, 0vh) scale(0.95) rotate(6deg)', offset:0 },
+        { transform: 'translate(-50%, -6vh) scale(1.02) rotate(-8deg)', offset:0.6 },
+        { transform: 'translate(-50%, -10vh) scale(1.06) rotate(-10deg)', offset:1 }
+      ],{duration:640,easing:'cubic-bezier(.2,.8,.2,1)'});
+      raf = requestAnimationFrame(tick);
+    }
+
+    // Cash out
+    function cashOut(){ if(!running || crashed) return; running=false; cancelAnimationFrame(raf); startBtn.textContent='Start'; startBtn.disabled=false; cashBtn.disabled=true; crashBtn.disabled=true; // sound: cheer + money + whoosh
+      playCheer(); playMoneyWhoosh(); spawnMoneyBurst(); spawnMoneySwoosh();
+      // audio throttle ramp down gently to simulate wind fade as it flies away
+      if(ctx) setThrottle(0.65);
+      // plane accelerate and vanish
+      const flyUp = planeWrap.animate([
+        { transform: planeWrap.style.transform || 'translate(-50%, -10vh) scale(1.06) rotate(-10deg)', opacity:1 },
+        { transform: 'translate(-50%, -160vh) scale(1.6) rotate(-20deg)', opacity:0 }
+      ],{duration:1000,easing:'cubic-bezier(.08,.9,.1,1)'});
+      flash.style.transition='opacity 340ms ease-out'; flash.style.opacity=0.18;
+      setTimeout(()=>{ flash.style.opacity=0; },300);
+      flyUp.onfinish = ()=>{ planeWrap.style.transform = 'translate(-50%, 0vh) scale(1) rotate(6deg)'; multEl.textContent='1.00×'; if(ctx) setThrottle(0.0); };
+    }
+
+    // Crash
+    function triggerCrash(now){ if(crashed) return; crashed=true; running=false; cancelAnimationFrame(raf); startBtn.textContent='Start'; startBtn.disabled=false; cashBtn.disabled=true; crashBtn.disabled=true; playExplosion(); // wipe engine
+      if(ctx) setThrottle(0.0);
+      const wob = planeWrap.animate([
+        { transform: planeWrap.style.transform || 'translate(-50%, -10vh) scale(1.06) rotate(-10deg)' , offset:0},
+        { transform: 'translate(-45%, -10vh) scale(1.08) rotate(8deg)', offset:0.25},
+        { transform: 'translate(-55%, -40vh) scale(1.1) rotate(40deg)', offset:0.6},
+        { transform: 'translate(-120%, 110vh) scale(0.7) rotate(90deg)', opacity:0, offset:1 }
+      ],{duration:900,easing:'cubic-bezier(.2,.1,.2,1)'});
+      flash.style.transition='opacity 200ms'; flash.style.opacity=0.55; setTimeout(()=>{ flash.style.opacity=0.0; },240);
+      // contrail puff
+      const rect = plane.getBoundingClientRect(); for(let i=0;i<8;i++){ setTimeout(()=> createContrail(rect.left + rect.width*0.06, rect.top + rect.height*0.56, 1.8 + Math.random()*1.2), i*80); }
+      setTimeout(()=>{ multEl.textContent='1.00×'; planeWrap.style.transform='translate(-50%, 0vh) scale(1) rotate(6deg)'; crashed=false; if(ctx) setThrottle(0.0); }, 1400);
+    }
+
+    // Event wiring
+    startBtn.addEventListener('click', ()=>{ // resume audio on first user gesture (browsers require gesture)
+      if(!ctx) try{ ensureAudio(); }catch(e){}
+      start();
+    });
+    cashBtn.addEventListener('click', cashOut);
+    crashBtn.addEventListener('click', ()=> triggerCrash(performance.now()));
+
+    // Mute toggle
+    mute.addEventListener('click', ()=>{ muted = !muted; mute.textContent = muted ? '🔇' : '🔊'; if(ctx) { ctx.destination.gain && (ctx.destination.gain.value = muted ? 0 : 1); } });
+
+    // Keyboard
+    window.addEventListener('keydown', (e)=>{ if(e.key === ' '){ e.preventDefault(); if(!running) start(); else cashOut(); } if(e.key==='c'){ triggerCrash(performance.now()); } });
+
+    // Initial state
+    planeWrap.style.transform = 'translate(-50%, 0vh) scale(1) rotate(6deg)'; cashBtn.disabled = true; crashBtn.disabled = true;
+    // resize behavior
+    window.addEventListener('resize', ()=>{ planeWrap.style.transition='none'; setTimeout(()=>planeWrap.style.transition='transform 160ms linear',40); });
+
+  </script>
+</body>
+</html>

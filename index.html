@@ -6,6 +6,7 @@
     <title>🛍️ Jiji ya Chogoria - Login / Signup</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
       /* 🌙 Dark Orange Theme - Sleek, Modern & Mobile-Friendly */
       :root {
@@ -69,10 +70,14 @@
         margin-bottom: 1rem;
       }
 
+      .input-group {
+        position: relative;
+        margin-bottom: 1rem;
+      }
+      
       input {
         width: 100%;
         padding: 0.9rem;
-        margin: 0.5rem 0;
         border: none;
         border-radius: var(--radius);
         background: #1a1a1a;
@@ -83,6 +88,36 @@
       input:focus {
         background: #222;
         outline: 2px solid var(--accent1);
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--subtext);
+        cursor: pointer;
+      }
+
+      .password-strength {
+        height: 4px;
+        margin-top: 5px;
+        border-radius: 2px;
+        background-color: #333;
+        overflow: hidden;
+      }
+      
+      .password-strength-meter {
+        height: 100%;
+        width: 0;
+        transition: width 0.3s, background-color 0.3s;
+      }
+      
+      .password-strength-text {
+        font-size: 0.8rem;
+        margin-top: 5px;
+        text-align: left;
+        color: var(--subtext);
       }
 
       button {
@@ -96,10 +131,19 @@
         margin-top: 0.6rem;
         font-size: 1.05rem;
         transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
       button:hover {
         transform: scale(1.03);
         box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
+      }
+      button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
       }
 
       .form-toggle p {
@@ -173,9 +217,17 @@
           <h2>🔑 Login</h2>
           <div id="loading" class="hidden loading-spinner"></div>
           <form id="login-form">
-            <input type="email" id="login-email" placeholder="📧 Email" required>
-            <input type="password" id="login-password" placeholder="🔒 Password" required>
-            <button type="submit">Login 🚀</button>
+            <div class="input-group">
+              <input type="email" id="login-email" placeholder="📧 Email" required>
+            </div>
+            <div class="input-group">
+              <input type="password" id="login-password" placeholder="🔒 Password" required>
+              <i class="fas fa-eye password-toggle" id="toggle-login-password"></i>
+            </div>
+            <button type="submit" id="login-btn">
+              <span>Login</span>
+              <i class="fas fa-arrow-right"></i>
+            </button>
           </form>
           <div class="form-toggle">
             <p>Don't have an account? <a id="show-signup">Sign Up</a></p>
@@ -187,10 +239,24 @@
         <div id="signup-section" class="hidden">
           <h2>🧍‍♂️ Signup</h2>
           <form id="signup-form">
-            <input type="text" id="signup-name" placeholder="👤 Full Name" required>
-            <input type="email" id="signup-email" placeholder="📧 Email" required>
-            <input type="password" id="signup-password" placeholder="🔒 Password" required>
-            <button type="submit">Sign Up 🎉</button>
+            <div class="input-group">
+              <input type="text" id="signup-name" placeholder="👤 Full Name" required>
+            </div>
+            <div class="input-group">
+              <input type="email" id="signup-email" placeholder="📧 Email" required>
+            </div>
+            <div class="input-group">
+              <input type="password" id="signup-password" placeholder="🔒 Password" required>
+              <i class="fas fa-eye password-toggle" id="toggle-signup-password"></i>
+              <div class="password-strength">
+                <div class="password-strength-meter" id="strength-meter"></div>
+              </div>
+              <div class="password-strength-text" id="strength-text"></div>
+            </div>
+            <button type="submit" id="signup-btn">
+              <span>Sign Up</span>
+              <i class="fas fa-user-plus"></i>
+            </button>
           </form>
           <div class="form-toggle">
             <p>Already have an account? <a id="show-login">Log In</a></p>
@@ -201,8 +267,13 @@
         <div id="forgot-section" class="hidden">
           <h2>🔁 Reset Password</h2>
           <form id="forgot-form">
-            <input type="email" id="forgot-email" placeholder="📧 Enter your email" required>
-            <button type="submit">Send Reset Link 📩</button>
+            <div class="input-group">
+              <input type="email" id="forgot-email" placeholder="📧 Enter your email" required>
+            </div>
+            <button type="submit" id="forgot-btn">
+              <span>Send Reset Link</span>
+              <i class="fas fa-paper-plane"></i>
+            </button>
           </form>
           <div class="form-toggle">
             <p>Remembered? <a id="show-login-2">Go Back</a></p>
@@ -227,11 +298,41 @@
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g'
       );
 
+      // DOM Elements
       const loginSection = document.getElementById('login-section');
       const signupSection = document.getElementById('signup-section');
       const forgotSection = document.getElementById('forgot-section');
       const loading = document.getElementById('loading');
+      
+      // Form elements
+      const loginForm = document.getElementById('login-form');
+      const signupForm = document.getElementById('signup-form');
+      const forgotForm = document.getElementById('forgot-form');
+      
+      // Buttons
+      const loginBtn = document.getElementById('login-btn');
+      const signupBtn = document.getElementById('signup-btn');
+      const forgotBtn = document.getElementById('forgot-btn');
+      
+      // Password toggles
+      const toggleLoginPassword = document.getElementById('toggle-login-password');
+      const toggleSignupPassword = document.getElementById('toggle-signup-password');
+      
+      // Password strength elements
+      const strengthMeter = document.getElementById('strength-meter');
+      const strengthText = document.getElementById('strength-text');
+      const signupPasswordInput = document.getElementById('signup-password');
 
+      // Check for remembered email
+      window.addEventListener('DOMContentLoaded', () => {
+        const rememberedEmail = localStorage.getItem('rememberedEmail');
+        if (rememberedEmail) {
+          document.getElementById('login-email').value = rememberedEmail;
+          document.getElementById('signup-email').value = rememberedEmail;
+        }
+      });
+
+      // Toast notification function
       function showToast(msg, type = 'success') {
         // Remove existing toasts
         document.querySelectorAll('.toast').forEach(toast => toast.remove());
@@ -246,6 +347,72 @@
       function isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       }
+
+      // Toggle password visibility
+      function setupPasswordToggle(toggleElement, inputElement) {
+        toggleElement.addEventListener('click', () => {
+          const type = inputElement.getAttribute('type') === 'password' ? 'text' : 'password';
+          inputElement.setAttribute('type', type);
+          toggleElement.classList.toggle('fa-eye');
+          toggleElement.classList.toggle('fa-eye-slash');
+        });
+      }
+
+      // Initialize password toggles
+      setupPasswordToggle(toggleLoginPassword, document.getElementById('login-password'));
+      setupPasswordToggle(toggleSignupPassword, document.getElementById('signup-password'));
+
+      // Password strength checker
+      function checkPasswordStrength(password) {
+        let strength = 0;
+        let feedback = [];
+        
+        if (password.length >= 8) strength += 1;
+        else feedback.push("at least 8 characters");
+        
+        if (/[A-Z]/.test(password)) strength += 1;
+        else feedback.push("uppercase letters");
+        
+        if (/[a-z]/.test(password)) strength += 1;
+        else feedback.push("lowercase letters");
+        
+        if (/[0-9]/.test(password)) strength += 1;
+        else feedback.push("numbers");
+        
+        if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+        else feedback.push("special characters");
+        
+        // Update strength meter
+        const percentage = (strength / 5) * 100;
+        strengthMeter.style.width = `${percentage}%`;
+        
+        // Set color based on strength
+        if (strength < 2) {
+          strengthMeter.style.backgroundColor = '#ff4b4b'; // Red
+          strengthText.textContent = 'Weak password';
+          strengthText.style.color = '#ff4b4b';
+        } else if (strength < 4) {
+          strengthMeter.style.backgroundColor = '#ff9800'; // Orange
+          strengthText.textContent = 'Medium strength';
+          strengthText.style.color = '#ff9800';
+        } else {
+          strengthMeter.style.backgroundColor = '#4caf50'; // Green
+          strengthText.textContent = 'Strong password';
+          strengthText.style.color = '#4caf50';
+        }
+        
+        // Provide feedback
+        if (password.length > 0 && strength < 3) {
+          strengthText.textContent += ` (Missing: ${feedback.join(', ')})`;
+        }
+        
+        return strength >= 3; // Return true if password is strong enough
+      }
+
+      // Add event listener for password strength
+      signupPasswordInput.addEventListener('input', (e) => {
+        checkPasswordStrength(e.target.value);
+      });
 
       // Toggle sections
       document.getElementById('show-signup').addEventListener('click', () => {
@@ -271,7 +438,7 @@
       });
 
       // 🔐 Login
-      document.getElementById('login-form').addEventListener('submit', async (e) => {
+      loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value.trim();
@@ -285,24 +452,43 @@
           return;
         }
 
+        // Disable button and show loading
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<span>Logging in...</span><i class="fas fa-spinner fa-spin"></i>';
         loading.classList.remove('hidden');
+
         try {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          loading.classList.add('hidden');
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          
           if (error) {
-            showToast(`❌ ${error.message}`, 'error');
+            // Handle specific error messages
+            if (error.message.includes("Invalid login credentials")) {
+              showToast('❌ Invalid email or password. Please try again.', 'error');
+            } else if (error.message.includes("Email not confirmed")) {
+              showToast('❌ Please verify your email before logging in.', 'error');
+            } else {
+              showToast(`❌ ${error.message}`, 'error');
+            }
             return;
           }
+          
+          // Remember email for future logins
+          localStorage.setItem('rememberedEmail', email);
+          
           showToast('✅ Login successful!');
           setTimeout(() => window.location.href = 'dashboard.html', 1200);
         } catch (err) {
-          loading.classList.add('hidden');
           showToast('❌ An unexpected error occurred', 'error');
+        } finally {
+          // Re-enable button and hide loading
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>';
+          loading.classList.add('hidden');
         }
       });
 
       // 🆕 Signup
-      document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('signup-name').value.trim();
         const email = document.getElementById('signup-email').value.trim();
@@ -316,14 +502,20 @@
           showToast('❌ Please enter a valid email address', 'error');
           return;
         }
-        if (password.length < 6) {
-          showToast('❌ Password must be at least 6 characters', 'error');
+        
+        // Check password strength
+        if (!checkPasswordStrength(password)) {
+          showToast('❌ Please create a stronger password', 'error');
           return;
         }
 
+        // Disable button and show loading
+        signupBtn.disabled = true;
+        signupBtn.innerHTML = '<span>Creating account...</span><i class="fas fa-spinner fa-spin"></i>';
         loading.classList.remove('hidden');
+
         try {
-          const { error } = await supabase.auth.signUp({
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -331,22 +523,35 @@
               emailRedirectTo: "https://emannuh254.github.io/jiji-ya-chogoria/dashboard.html"
             }
           });
-          loading.classList.add('hidden');
+          
           if (error) {
-            showToast(`❌ ${error.message}`, 'error');
+            // Handle specific error messages
+            if (error.message.includes("User already registered")) {
+              showToast('❌ An account with this email already exists. Please log in.', 'error');
+            } else {
+              showToast(`❌ ${error.message}`, 'error');
+            }
             return;
           }
+          
+          // Remember email for future logins
+          localStorage.setItem('rememberedEmail', email);
+          
           showToast('📧 Account created! Check your email to verify.');
           signupSection.classList.add('hidden');
           loginSection.classList.remove('hidden');
         } catch (err) {
-          loading.classList.add('hidden');
           showToast('❌ An unexpected error occurred', 'error');
+        } finally {
+          // Re-enable button and hide loading
+          signupBtn.disabled = false;
+          signupBtn.innerHTML = '<span>Sign Up</span><i class="fas fa-user-plus"></i>';
+          loading.classList.add('hidden');
         }
       });
 
       // 🔁 Forgot password
-      document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+      forgotForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('forgot-email').value.trim();
 
@@ -355,22 +560,31 @@
           return;
         }
 
+        // Disable button and show loading
+        forgotBtn.disabled = true;
+        forgotBtn.innerHTML = '<span>Sending...</span><i class="fas fa-spinner fa-spin"></i>';
         loading.classList.remove('hidden');
+
         try {
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: 'https://emannuh254.github.io/jiji-ya-chogoria/reset.html'
           });
-          loading.classList.add('hidden');
+          
           if (error) {
             showToast(`❌ ${error.message}`, 'error');
             return;
           }
+          
           showToast('📩 Password reset link sent! Check your email.');
           forgotSection.classList.add('hidden');
           loginSection.classList.remove('hidden');
         } catch (err) {
-          loading.classList.add('hidden');
           showToast('❌ An unexpected error occurred', 'error');
+        } finally {
+          // Re-enable button and hide loading
+          forgotBtn.disabled = false;
+          forgotBtn.innerHTML = '<span>Send Reset Link</span><i class="fas fa-paper-plane"></i>';
+          loading.classList.add('hidden');
         }
       });
     </script>

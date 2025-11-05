@@ -9,17 +9,17 @@
         :root {
             --bg-primary: #000000;
             --bg-secondary: #000000;
-            --bg-tertiary: #121212;
-            --bg-card: #1a1a1a;
-            --bg-hover: #262626;
+            --bg-tertiary: #0a0a0a;
+            --bg-card: #0d0d0d;
+            --bg-hover: #1a1a1a;
             --text-primary: #ffffff;
             --text-secondary: #a0a0a0;
             --text-tertiary: #808080;
             --accent-primary: #ff6b35;
             --accent-secondary: #ff8c42;
             --accent-gradient: linear-gradient(135deg, #ff6b35, #ff8c42);
-            --border-color: #2a2a2a;
-            --border-hover: #3a3a3a;
+            --border-color: #1a1a1a;
+            --border-hover: #2a2a2a;
             --success: #4caf50;
             --error: #f44336;
             --warning: #ff9800;
@@ -234,79 +234,16 @@
             font-size: 1.3rem;
         }
 
-        /* Products Container - Now at the top */
-        #products-container {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            margin-bottom: 30px;
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-
-        #products-container:hover {
-            border-color: var(--accent-primary);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .section-header h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-header h2::before {
-            content: "🔥";
-            font-size: 1.4rem;
-        }
-
-        /* Filter Options */
-        .filter-options {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .filter-select {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--input-radius);
-            color: var(--text-primary);
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 8px 12px;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            background: var(--bg-card);
-            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
-        }
-
-        /* Products Grid - Instagram Style - Improved */
+        /* Products Grid - Independent Cards */
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
+            margin-bottom: 30px;
         }
 
-        /* Instagram-like Post Styles - Enhanced */
-        .post-card {
+        /* Independent Product Card */
+        .product-card {
             background: var(--bg-card);
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
@@ -318,13 +255,14 @@
             height: 100%;
         }
 
-        .post-card:hover {
-            transform: translateY(-3px);
+        .product-card:hover {
+            transform: translateY(-5px);
             border-color: var(--accent-primary);
+            box-shadow: var(--hover-shadow);
         }
 
-        /* Image Gallery - Enhanced */
-        .post-gallery {
+        /* Image Gallery - Enhanced for full-screen images */
+        .product-gallery {
             position: relative;
             width: 100%;
             padding-bottom: 100%; /* 1:1 Aspect Ratio */
@@ -332,7 +270,7 @@
             overflow: hidden;
         }
 
-        .post-image-container {
+        .product-image-container {
             position: absolute;
             top: 0;
             left: 0;
@@ -342,13 +280,13 @@
             transition: transform 0.3s ease;
         }
 
-        .post-image {
+        .product-image {
             min-width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* Cover to fill the entire container */
         }
 
-        .post-image-indicators {
+        .product-image-indicators {
             position: absolute;
             bottom: 10px;
             left: 0;
@@ -372,7 +310,7 @@
             transform: scale(1.2);
         }
 
-        .post-nav {
+        .product-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
@@ -392,23 +330,23 @@
             z-index: 10;
         }
 
-        .post-card:hover .post-nav {
+        .product-card:hover .product-nav {
             opacity: 1;
         }
 
-        .post-nav.prev {
+        .product-nav.prev {
             left: 10px;
         }
 
-        .post-nav.next {
+        .product-nav.next {
             right: 10px;
         }
 
-        .post-nav:hover {
+        .product-nav:hover {
             background: rgba(0, 0, 0, 0.8);
         }
 
-        .post-overlay {
+        .product-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -419,7 +357,7 @@
             transition: var(--transition);
         }
 
-        .post-card:hover .post-overlay {
+        .product-card:hover .product-overlay {
             opacity: 1;
         }
 
@@ -435,14 +373,15 @@
             color: var(--text-tertiary);
         }
 
-        .post-content {
+        .product-content {
             padding: 16px;
             flex: 1;
             display: flex;
             flex-direction: column;
+            background: var(--bg-card); /* Ensure content area has black background */
         }
 
-        .post-header {
+        .product-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -479,17 +418,17 @@
             font-size: 1.1rem;
         }
 
-        .post-time {
+        .product-time {
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
 
-        .post-body {
+        .product-body {
             margin-bottom: 16px;
             flex: 1;
         }
 
-        .post-title {
+        .product-title {
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -501,7 +440,7 @@
             overflow: hidden;
         }
 
-        .post-description {
+        .product-description {
             color: var(--text-secondary);
             line-height: 1.5;
             font-size: 1rem;
@@ -511,14 +450,14 @@
             overflow: hidden;
         }
 
-        .post-actions {
+        .product-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: auto;
         }
 
-        .post-price {
+        .product-price {
             font-size: 1.4rem;
             font-weight: 800;
             color: var(--accent-primary);
@@ -581,6 +520,190 @@
 
         .reserved::before {
             content: "⏳";
+        }
+
+        /* Social Interaction Section */
+        .product-social {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 12px;
+        }
+
+        .like-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .like-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--button-radius);
+            transition: var(--transition);
+        }
+
+        .like-btn:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .like-btn.liked {
+            color: var(--accent-primary);
+        }
+
+        .like-count {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .comment-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--button-radius);
+            transition: var(--transition);
+        }
+
+        .comment-btn:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .comment-count {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .report-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: var(--button-radius);
+            transition: var(--transition);
+        }
+
+        .report-btn:hover {
+            background: rgba(244, 67, 54, 0.1);
+            color: var(--error);
+        }
+
+        /* Comments Section */
+        .comments-section {
+            margin-top: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            display: none;
+        }
+
+        .comments-section.active {
+            display: block;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .comment-author {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .comment-time {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        .comment-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .comment-input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--input-radius);
+            color: var(--text-primary);
+            padding: 10px;
+            font-size: 0.95rem;
+            resize: none;
+            min-height: 40px;
+            transition: var(--transition);
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: var(--bg-card);
+        }
+
+        .comment-submit {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--button-radius);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            align-self: flex-end;
+        }
+
+        .comment-submit:hover {
+            transform: translateY(-2px);
         }
 
         /* Hero Section - Made smaller */
@@ -1059,7 +1182,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: rgba(0, 0, 0, 0.98); /* Darker background for better contrast */
             overflow: auto;
         }
 
@@ -1076,7 +1199,7 @@
         .modal-image {
             width: 100%;
             height: auto;
-            border-radius: 8px;
+            border-radius: 0; /* No border radius for Instagram-like feel */
             display: block;
         }
 
@@ -1148,6 +1271,113 @@
 
         .close-modal:hover {
             color: var(--accent-primary);
+        }
+
+        /* Report Modal */
+        .report-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow: auto;
+        }
+
+        .report-modal-content {
+            background-color: var(--bg-card);
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .report-modal h2 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .report-modal h2::before {
+            content: "🚩";
+            font-size: 1.4rem;
+        }
+
+        .report-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .report-form label {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .report-form select,
+        .report-form textarea {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--input-radius);
+            color: var(--text-primary);
+            padding: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .report-form select:focus,
+        .report-form textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: var(--bg-card);
+        }
+
+        .report-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .report-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .report-form-actions button {
+            padding: 10px 20px;
+            border-radius: var(--button-radius);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .report-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .report-cancel:hover {
+            background: var(--bg-hover);
+        }
+
+        .report-submit {
+            background: var(--accent-gradient);
+            color: white;
+        }
+
+        .report-submit:hover {
+            transform: translateY(-2px);
         }
 
         /* Footer - Made smaller */
@@ -1236,6 +1466,7 @@
             
             .products-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
             }
 
             .hero-title {
@@ -1256,11 +1487,11 @@
                 font-size: 16px;
             }
             
-            .post-title {
+            .product-title {
                 font-size: 1.1rem;
             }
             
-            .post-price {
+            .product-price {
                 font-size: 1.2rem;
             }
             
@@ -1291,6 +1522,11 @@
 
             .products-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .report-modal-content {
+                width: 95%;
+                padding: 20px;
             }
         }
 
@@ -1323,26 +1559,14 @@
     </header>
 
     <main class="container">
-        <!-- Products Section - Now at the top -->
+        <!-- User Info -->
         <div id="user-info">
             <span id="user-name">Hi 👋 <strong>Mannuh</strong></span>
         </div>
 
-        <div id="products-container">
-            <div class="section-header">
-                <h2>🔥 Trending Products</h2>
-                <div class="filter-options">
-                    <select id="status-filter" class="filter-select">
-                        <option value="all">🌍 All Products</option>
-                        <option value="in_stock">✅ In Stock</option>
-                        <option value="sold">❌ Sold</option>
-                        <option value="reserved">⏳ Reserved</option>
-                    </select>
-                </div>
-            </div>
-            <div id="products-list" class="products-grid">
-                <div class="loading-spinner">⏳ Loading the latest deals...</div>
-            </div>
+        <!-- Products Grid - Independent Cards -->
+        <div id="products-list" class="products-grid">
+            <div class="loading-spinner">⏳ Loading the latest deals...</div>
         </div>
 
         <!-- Hero Section - Made smaller -->
@@ -1429,6 +1653,33 @@
             <img class="modal-image" src="" alt="Product Image">
             <button class="modal-nav next">❯</button>
             <div class="modal-indicators"></div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="report-modal">
+        <div class="report-modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Report Product</h2>
+            <form class="report-form" id="report-form">
+                <label for="report-reason">Reason for reporting:</label>
+                <select id="report-reason" required>
+                    <option value="">Select a reason</option>
+                    <option value="spam">Spam or fake</option>
+                    <option value="inappropriate">Inappropriate content</option>
+                    <option value="scam">Potential scam</option>
+                    <option value="misleading">Misleading information</option>
+                    <option value="other">Other</option>
+                </select>
+                
+                <label for="report-details">Additional details:</label>
+                <textarea id="report-details" placeholder="Please provide more information about why you're reporting this product..."></textarea>
+                
+                <div class="report-form-actions">
+                    <button type="button" class="report-cancel" id="report-cancel">Cancel</button>
+                    <button type="submit" class="report-submit">Submit Report</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1557,135 +1808,423 @@
                     return;
                 }
 
-                data.forEach(product => {
-                    const statusClass = product.status === 'in_stock'
-                        ? 'in-stock'
-                        : product.status === 'sold'
-                            ? 'sold'
-                            : 'reserved';
-
-                    // Process image URLs - handle single image or multiple images
-                    let images = [];
-                    if (product.image_url) {
-                        // Check if it's a single image or multiple (comma-separated)
-                        if (product.image_url.includes(',')) {
-                            images = product.image_url.split(',').map(url => url.trim());
-                        } else {
-                            images = [product.image_url];
-                        }
-                    }
-
-                    // Create image gallery HTML
-                    let galleryHtml = '';
-                    if (images.length > 0) {
-                        galleryHtml = `
-                            <div class="post-gallery">
-                                <div class="post-image-container" data-current="0" data-images='${JSON.stringify(images)}'>
-                                    ${images.map((img, index) => `
-                                        <img src="${img}" alt="${product.title}" class="post-image" loading="lazy" 
-                                            onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
-                                    `).join('')}
-                                </div>
-                                ${images.length > 1 ? `
-                                    <button class="post-nav prev" onclick="changeImage(this, -1)">❮</button>
-                                    <button class="post-nav next" onclick="changeImage(this, 1)">❯</button>
-                                    <div class="post-image-indicators">
-                                        ${images.map((_, index) => `
-                                            <div class="indicator ${index === 0 ? 'active' : ''}" 
-                                                onclick="goToImage(this, ${index})"></div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                                <div class="post-overlay"></div>
-                            </div>
-                        `;
-                    } else {
-                        galleryHtml = `
-                            <div class="post-gallery no-image">
-                                <div class="no-image-placeholder">📷</div>
-                                <div class="post-overlay"></div>
-                            </div>
-                        `;
-                    }
-
-                    const productEl = document.createElement('div');
-                    productEl.className = 'post-card';
-                    productEl.setAttribute('data-status', product.status);
-                    
-                    productEl.innerHTML = `
-                        ${galleryHtml}
-                        <div class="post-content">
-                            <div class="post-header">
-                                <div class="seller-info">
-                                    <div class="seller-avatar">${product.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}</div>
-                                    <div class="seller-details">
-                                        <div class="seller-name">${product.profiles?.full_name || 'Unknown'}</div>
-                                        <div class="post-time">${formatPostTime(product.created_at)}</div>
-                                    </div>
-                                </div>
-                                <div class="status-indicator ${statusClass}">
-                                    ${product.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
-                                </div>
-                            </div>
-                            
-                            <div class="post-body">
-                                <h3 class="post-title">${product.title}</h3>
-                                <p class="post-description">${product.description || 'No description provided.'}</p>
-                            </div>
-                            
-                            <div class="post-actions">
-                                <div class="post-price">KES ${product.price || 'N/A'}</div>
-                                <button class="chat-seller-btn"
-                                    data-seller-id="${product.user_id}"
-                                    data-seller-name="${product.profiles?.full_name || 'Seller'}"
-                                    data-product-title="${product.title}">
-                                    💬 Chat seller 
-                                </button>
-                            </div>
-                        </div>
-                    `;
-
-                    productsList.appendChild(productEl);
-                });
-
-                // Add event listeners for chat buttons
-                document.querySelectorAll('.chat-seller-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const sellerId = this.dataset.sellerId;
-                        const sellerName = this.dataset.sellerName;
-                        const productTitle = this.dataset.productTitle;
-
-                        sessionStorage.setItem('chatSellerId', sellerId);
-                        sessionStorage.setItem('chatSellerName', sellerName);
-                        sessionStorage.setItem('chatProductTitle', productTitle);
-
-                        window.location.href = 'chat.html';
-                    });
-                });
-
-                // Add event listeners for image galleries
-                document.querySelectorAll('.post-gallery').forEach(gallery => {
-                    gallery.addEventListener('click', function(e) {
-                        // Don't open modal if clicking on nav buttons or indicators
-                        if (e.target.classList.contains('post-nav') || 
-                            e.target.classList.contains('indicator')) {
-                            return;
-                        }
-                        
-                        const container = this.querySelector('.post-image-container');
-                        if (container) {
-                            const images = JSON.parse(container.dataset.images);
-                            const currentIndex = parseInt(container.dataset.current);
-                            openImageModal(images, currentIndex);
-                        }
-                    });
-                });
+                // Process each product
+                for (const product of data) {
+                    const productCard = await createProductCard(product);
+                    productsList.appendChild(productCard);
+                }
             } catch (err) {
                 console.error('Unexpected error:', err);
                 productsList.innerHTML = '<div class="error-message">Unexpected error while loading products 😕</div>';
                 showToast('Unexpected error occurred 😕', 'error');
             }
         }
+
+        // Create a product card
+        async function createProductCard(product) {
+            const statusClass = product.status === 'in_stock'
+                ? 'in-stock'
+                : product.status === 'sold'
+                    ? 'sold'
+                    : 'reserved';
+
+            // Process image URLs - handle single image or multiple images
+            let images = [];
+            if (product.image_url) {
+                // Check if it's a single image or multiple (comma-separated)
+                if (product.image_url.includes(',')) {
+                    images = product.image_url.split(',').map(url => url.trim());
+                } else {
+                    images = [product.image_url];
+                }
+            }
+
+            // Get likes count
+            const { data: likesData, error: likesError } = await supabase
+                .from('likes')
+                .select('*', { count: 'exact' })
+                .eq('product_id', product.id);
+
+            const likesCount = likesError ? 0 : likesData.length;
+
+            // Get comments count
+            const { data: commentsData, error: commentsError } = await supabase
+                .from('comments')
+                .select('*', { count: 'exact' })
+                .eq('product_id', product.id);
+
+            const commentsCount = commentsError ? 0 : commentsData.length;
+
+            // Create image gallery HTML
+            let galleryHtml = '';
+            if (images.length > 0) {
+                galleryHtml = `
+                    <div class="product-gallery">
+                        <div class="product-image-container" data-current="0" data-images='${JSON.stringify(images)}'>
+                            ${images.map((img, index) => `
+                                <img src="${img}" alt="${product.title}" class="product-image" loading="lazy" 
+                                    onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
+                            `).join('')}
+                        </div>
+                        ${images.length > 1 ? `
+                            <button class="product-nav prev" onclick="changeImage(this, -1)">❮</button>
+                            <button class="product-nav next" onclick="changeImage(this, 1)">❯</button>
+                            <div class="product-image-indicators">
+                                ${images.map((_, index) => `
+                                    <div class="indicator ${index === 0 ? 'active' : ''}" 
+                                        onclick="goToImage(this, ${index})"></div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="product-overlay"></div>
+                    </div>
+                `;
+            } else {
+                galleryHtml = `
+                    <div class="product-gallery no-image">
+                        <div class="no-image-placeholder">📷</div>
+                        <div class="product-overlay"></div>
+                    </div>
+                `;
+            }
+
+            const productEl = document.createElement('div');
+            productEl.className = 'product-card';
+            productEl.setAttribute('data-status', product.status);
+            productEl.setAttribute('data-product-id', product.id);
+            
+            productEl.innerHTML = `
+                ${galleryHtml}
+                <div class="product-content">
+                    <div class="product-header">
+                        <div class="seller-info">
+                            <div class="seller-avatar">${product.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}</div>
+                            <div class="seller-details">
+                                <div class="seller-name">${product.profiles?.full_name || 'Unknown'}</div>
+                                <div class="product-time">${formatPostTime(product.created_at)}</div>
+                            </div>
+                        </div>
+                        <div class="status-indicator ${statusClass}">
+                            ${product.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+                        </div>
+                    </div>
+                    
+                    <div class="product-body">
+                        <h3 class="product-title">${product.title}</h3>
+                        <p class="product-description">${product.description || 'No description provided.'}</p>
+                    </div>
+                    
+                    <div class="product-actions">
+                        <div class="product-price">KES ${product.price || 'N/A'}</div>
+                        <button class="chat-seller-btn"
+                            data-seller-id="${product.user_id}"
+                            data-seller-name="${product.profiles?.full_name || 'Seller'}"
+                            data-product-title="${product.title}">
+                            💬 Chat seller 
+                        </button>
+                    </div>
+                    
+                    <div class="product-social">
+                        <div class="like-section">
+                            <button class="like-btn" data-product-id="${product.id}">
+                                <span class="like-icon">❤️</span>
+                                <span class="like-count">${likesCount}</span>
+                            </button>
+                        </div>
+                        <button class="comment-btn" data-product-id="${product.id}">
+                            <span class="comment-icon">💬</span>
+                            <span class="comment-count">${commentsCount}</span>
+                        </button>
+                        <button class="report-btn" data-product-id="${product.id}" data-seller-id="${product.user_id}">
+                            <span class="report-icon">🚩</span>
+                            Report
+                        </button>
+                    </div>
+                    
+                    <div class="comments-section" id="comments-${product.id}">
+                        <div class="comment-form">
+                            <textarea class="comment-input" placeholder="Add a comment..." data-product-id="${product.id}"></textarea>
+                            <button class="comment-submit" data-product-id="${product.id}">Post</button>
+                        </div>
+                        <div class="comments-list" id="comments-list-${product.id}">
+                            <!-- Comments will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners
+            const likeBtn = productEl.querySelector('.like-btn');
+            likeBtn.addEventListener('click', function() {
+                toggleLike(this, product.id);
+            });
+
+            const commentBtn = productEl.querySelector('.comment-btn');
+            commentBtn.addEventListener('click', function() {
+                toggleComments(product.id);
+            });
+
+            const reportBtn = productEl.querySelector('.report-btn');
+            reportBtn.addEventListener('click', function() {
+                openReportModal(product.id, product.user_id);
+            });
+
+            const commentSubmit = productEl.querySelector('.comment-submit');
+            commentSubmit.addEventListener('click', function() {
+                const commentInput = productEl.querySelector('.comment-input');
+                submitComment(product.id, commentInput.value);
+                commentInput.value = '';
+            });
+
+            // Add event listener for image gallery
+            const gallery = productEl.querySelector('.product-gallery');
+            gallery.addEventListener('click', function(e) {
+                // Don't open modal if clicking on nav buttons or indicators
+                if (e.target.classList.contains('product-nav') || 
+                    e.target.classList.contains('indicator')) {
+                    return;
+                }
+                
+                const container = this.querySelector('.product-image-container');
+                if (container) {
+                    const images = JSON.parse(container.dataset.images);
+                    const currentIndex = parseInt(container.dataset.current);
+                    openImageModal(images, currentIndex);
+                }
+            });
+
+            // Add event listener for chat button
+            const chatBtn = productEl.querySelector('.chat-seller-btn');
+            chatBtn.addEventListener('click', function() {
+                const sellerId = this.dataset.sellerId;
+                const sellerName = this.dataset.sellerName;
+                const productTitle = this.dataset.productTitle;
+
+                sessionStorage.setItem('chatSellerId', sellerId);
+                sessionStorage.setItem('chatSellerName', sellerName);
+                sessionStorage.setItem('chatProductTitle', productTitle);
+
+                window.location.href = 'chat.html';
+            });
+
+            return productEl;
+        }
+
+        // Toggle like on a product
+        async function toggleLike(button, productId) {
+            const user = await checkAuth();
+            if (!user) return;
+
+            const likeIcon = button.querySelector('.like-icon');
+            const likeCount = button.querySelector('.like-count');
+            const currentCount = parseInt(likeCount.textContent);
+            
+            // Check if user already liked this product
+            const { data: existingLike, error: checkError } = await supabase
+                .from('likes')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('product_id', productId)
+                .single();
+
+            if (existingLike) {
+                // Unlike the product
+                const { error: deleteError } = await supabase
+                    .from('likes')
+                    .delete()
+                    .eq('id', existingLike.id);
+                
+                if (deleteError) {
+                    console.error('Error unliking product:', deleteError);
+                    showToast('Error unliking product 😕', 'error');
+                    return;
+                }
+                
+                button.classList.remove('liked');
+                likeCount.textContent = Math.max(0, currentCount - 1);
+            } else {
+                // Like the product
+                const { error: insertError } = await supabase
+                    .from('likes')
+                    .insert([{
+                        user_id: user.id,
+                        product_id: productId
+                    }]);
+                
+                if (insertError) {
+                    console.error('Error liking product:', insertError);
+                    showToast('Error liking product 😕', 'error');
+                    return;
+                }
+                
+                button.classList.add('liked');
+                likeCount.textContent = currentCount + 1;
+            }
+        }
+
+        // Toggle comments section
+        function toggleComments(productId) {
+            const commentsSection = document.getElementById(`comments-${productId}`);
+            commentsSection.classList.toggle('active');
+            
+            // Load comments if section is opened and empty
+            if (commentsSection.classList.contains('active')) {
+                const commentsList = document.getElementById(`comments-list-${productId}`);
+                if (commentsList.children.length === 0) {
+                    loadComments(productId);
+                }
+            }
+        }
+
+        // Load comments for a product
+        async function loadComments(productId) {
+            const commentsList = document.getElementById(`comments-list-${productId}`);
+            commentsList.innerHTML = '<div class="loading-spinner">Loading comments...</div>';
+            
+            try {
+                const { data: comments, error } = await supabase
+                    .from('comments')
+                    .select(`
+                        id,
+                        content,
+                        created_at,
+                        user_id,
+                        profiles!comments_user_id_fkey(full_name)
+                    `)
+                    .eq('product_id', productId)
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading comments:', error);
+                    commentsList.innerHTML = '<div class="error-message">Error loading comments</div>';
+                    return;
+                }
+                
+                commentsList.innerHTML = '';
+                
+                if (comments.length === 0) {
+                    commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+                    return;
+                }
+                
+                comments.forEach(comment => {
+                    const commentEl = document.createElement('div');
+                    commentEl.className = 'comment';
+                    commentEl.innerHTML = `
+                        <div class="comment-avatar">${comment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <div class="comment-author">${comment.profiles?.full_name || 'Unknown'}</div>
+                                <div class="comment-time">${formatPostTime(comment.created_at)}</div>
+                            </div>
+                            <div class="comment-text">${comment.content}</div>
+                        </div>
+                    `;
+                    commentsList.appendChild(commentEl);
+                });
+            } catch (err) {
+                console.error('Unexpected error loading comments:', err);
+                commentsList.innerHTML = '<div class="error-message">Unexpected error loading comments</div>';
+            }
+        }
+
+        // Submit a comment
+        async function submitComment(productId, content) {
+            if (!content.trim()) {
+                showToast('Please enter a comment 😕', 'error');
+                return;
+            }
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('comments')
+                    .insert([{
+                        user_id: user.id,
+                        product_id: productId,
+                        content: content
+                    }]);
+                
+                if (error) {
+                    console.error('Error submitting comment:', error);
+                    showToast('Error submitting comment 😕', 'error');
+                    return;
+                }
+                
+                showToast('Comment posted successfully! 🎉', 'success');
+                
+                // Reload comments
+                loadComments(productId);
+                
+                // Update comment count
+                const commentBtn = document.querySelector(`.comment-btn[data-product-id="${productId}"]`);
+                const commentCount = commentBtn.querySelector('.comment-count');
+                commentCount.textContent = parseInt(commentCount.textContent) + 1;
+            } catch (err) {
+                console.error('Unexpected error submitting comment:', err);
+                showToast('Unexpected error submitting comment 😕', 'error');
+            }
+        }
+
+        // Open report modal
+        function openReportModal(productId, sellerId) {
+            const modal = document.getElementById('report-modal');
+            modal.style.display = 'block';
+            
+            // Set product ID in the form
+            const form = document.getElementById('report-form');
+            form.setAttribute('data-product-id', productId);
+            form.setAttribute('data-seller-id', sellerId);
+        }
+
+        // Submit report
+        document.getElementById('report-form')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productId = this.getAttribute('data-product-id');
+            const sellerId = this.getAttribute('data-seller-id');
+            const reason = document.getElementById('report-reason').value;
+            const details = document.getElementById('report-details').value;
+            
+            if (!reason) {
+                showToast('Please select a reason for reporting 😕', 'error');
+                return;
+            }
+            
+            const user = await checkAuth();
+            if (!user) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('reports')
+                    .insert([{
+                        user_id: user.id,
+                        product_id: productId,
+                        seller_id: sellerId,
+                        reason: reason,
+                        details: details
+                    }]);
+                
+                if (error) {
+                    console.error('Error submitting report:', error);
+                    showToast('Error submitting report 😕', 'error');
+                    return;
+                }
+                
+                showToast('Report submitted successfully! 🎉', 'success');
+                
+                // Close modal
+                document.getElementById('report-modal').style.display = 'none';
+                
+                // Reset form
+                this.reset();
+            } catch (err) {
+                console.error('Unexpected error submitting report:', err);
+                showToast('Unexpected error submitting report 😕', 'error');
+            }
+        });
 
         // Format post time (e.g., "2 hours ago")
         function formatPostTime(dateString) {
@@ -1706,7 +2245,7 @@
 
         // Change image in gallery
         function changeImage(button, direction) {
-            const container = button.parentElement.querySelector('.post-image-container');
+            const container = button.parentElement.querySelector('.product-image-container');
             const images = JSON.parse(container.dataset.images);
             let currentIndex = parseInt(container.dataset.current);
             
@@ -1726,7 +2265,7 @@
 
         // Go to specific image
         function goToImage(indicator, index) {
-            const container = indicator.parentElement.parentElement.querySelector('.post-image-container');
+            const container = indicator.parentElement.parentElement.querySelector('.product-image-container');
             const images = JSON.parse(container.dataset.images);
             
             container.dataset.current = index;
@@ -1798,6 +2337,17 @@
             }
         });
 
+        // Close report modal
+        document.querySelectorAll('.close-modal').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+
+        document.getElementById('report-cancel')?.addEventListener('click', function() {
+            document.getElementById('report-modal').style.display = 'none';
+        });
+
         // Status filter functionality
         document.getElementById('status-filter')?.addEventListener('change', function() {
             loadProducts(this.value);
@@ -1829,6 +2379,27 @@
                     console.log('Product change detected');
                     const statusFilter = document.getElementById('status-filter')?.value || 'all';
                     loadProducts(statusFilter);
+                })
+                .subscribe();
+                
+            // Real-time subscription for likes
+            supabase
+                .channel('likes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, () => {
+                    console.log('Like change detected');
+                    const statusFilter = document.getElementById('status-filter')?.value || 'all';
+                    loadProducts(statusFilter);
+                })
+                .subscribe();
+                
+            // Real-time subscription for comments
+            supabase
+                .channel('comments')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => {
+                    console.log('Comment change detected');
+                    // Reload comments for the specific product
+                    const productId = this.new.record.product_id;
+                    loadComments(productId);
                 })
                 .subscribe();
         });

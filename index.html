@@ -157,10 +157,50 @@
         .form-container { padding: 1.2rem; border-radius: 10px; }
         input, button { font-size: 1rem; padding: 0.85rem; }
       }
+      
+      /* Session check indicator */
+      .session-check {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        align-items: center;
+        background: rgba(18, 17, 17, 0.8);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: var(--subtext);
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+      }
+      
+      .session-check .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #333;
+        border-top: 2px solid var(--accent1);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 0.5rem;
+      }
+      
+      .session-check.success {
+        color: var(--success);
+      }
+      
+      .session-check.success .spinner {
+        border-top-color: var(--success);
+      }
     </style>
   </head>
 
   <body>
+    <!-- Session check indicator -->
+    <div id="session-check" class="session-check">
+      <div class="spinner"></div>
+      <span>Checking session...</span>
+    </div>
+
     <header>
       <h1>🛒 Jiji ya Chogoria</h1>
       <p>Your Local Marketplace ✨</p>
@@ -231,6 +271,13 @@
       const signupSection = document.getElementById('signup-section');
       const forgotSection = document.getElementById('forgot-section');
       const loading = document.getElementById('loading');
+      const sessionCheck = document.getElementById('session-check');
+      
+      // Track if user has interacted with the form
+      let userInteracted = false;
+      
+      // Track if auto-login is in progress
+      let autoLoginInProgress = false;
 
       function showToast(msg, type = 'success') {
         // Remove existing toasts
@@ -270,6 +317,143 @@
         loading.classList.add('hidden');
       });
 
+      // Track user interaction
+      document.querySelectorAll('input, button').forEach(element => {
+        element.addEventListener('focus', () => {
+          userInteracted = true;
+        });
+        element.addEventListener('click', () => {
+          userInteracted = true;
+        });
+      });
+
+      // Function to record login time in the database
+      async function recordLoginTime(userId) {
+        try {
+          // Get device fingerprint (simple version)
+          const deviceInfo = navigator.userAgent;
+          
+          // Record login time
+          const { error } = await supabase
+            .from('user_logins')
+            .insert({
+              user_id: userId,
+              login_time: new Date().toISOString(),
+              device_info: deviceInfo
+            });
+            
+          if (error) {
+            console.error('Error recording login time:', error);
+          }
+        } catch (err) {
+          console.error('Error in recordLoginTime:', err);
+        }
+      }
+
+      // Function to check if user logged in within the last week
+      async function checkRecentLogin(userId) {
+        try {
+          // Calculate date one week ago
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          
+          // Query for recent logins
+          const { data, error } = await supabase
+            .from('user_logins')
+            .select('login_time')
+            .eq('user_id', userId)
+            .gte('login_time', oneWeekAgo.toISOString())
+            .order('login_time', { ascending: false })
+            .limit(1);
+            
+          if (error) {
+            console.error('Error checking recent login:', error);
+            return false;
+          }
+          
+          // If we have at least one login within the last week
+          return data && data.length > 0;
+        } catch (err) {
+          console.error('Error in checkRecentLogin:', err);
+          return false;
+        }
+      }
+
+      // Function to update session check indicator
+      function updateSessionCheckIndicator(text, isSuccess = false) {
+        const indicator = document.getElementById('session-check');
+        const span = indicator.querySelector('span');
+        span.textContent = text;
+        
+        if (isSuccess) {
+          indicator.classList.add('success');
+        }
+        
+        // Hide after 2 seconds
+        setTimeout(() => {
+          indicator.style.opacity = '0';
+          setTimeout(() => {
+            indicator.style.display = 'none';
+          }, 300);
+        }, 2000);
+      }
+
+      // 🔐 Fast background auto-login check
+      window.addEventListener('DOMContentLoaded', () => {
+        // Start session check immediately without blocking UI
+        setTimeout(async () => {
+          try {
+            // First check local session (fast)
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              throw error;
+            }
+            
+            if (session) {
+              // Update indicator
+              updateSessionCheckIndicator('Session found, verifying...', true);
+              
+              // Check if user logged in within the last week
+              const recentLogin = await checkRecentLogin(session.user.id);
+              
+              if (recentLogin) {
+                // User logged in recently - auto login
+                autoLoginInProgress = true;
+                updateSessionCheckIndicator('Welcome back! Redirecting...', true);
+                
+                // Only redirect if user hasn't interacted with form
+                if (!userInteracted) {
+                  setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                  }, 800);
+                } else {
+                  // User interacted, show toast but don't redirect immediately
+                  showToast('✅ You\'re logged in! Continue to dashboard.');
+                  // Add a button to redirect
+                  const redirectBtn = document.createElement('button');
+                  redirectBtn.textContent = 'Go to Dashboard';
+                  redirectBtn.style.marginTop = '1rem';
+                  redirectBtn.style.background = 'linear-gradient(135deg, var(--success), #45a049)';
+                  redirectBtn.onclick = () => window.location.href = 'dashboard.html';
+                  document.querySelector('.form-container').appendChild(redirectBtn);
+                }
+              } else {
+                // User hasn't logged in recently - sign out
+                await supabase.auth.signOut();
+                updateSessionCheckIndicator('Session expired');
+              }
+            } else {
+              // No session found
+              updateSessionCheckIndicator('No active session');
+            }
+          } catch (err) {
+            console.error('Error checking session:', err);
+            updateSessionCheckIndicator('Session check failed');
+          }
+        }, 100); // Small delay to ensure UI is rendered
+      });
+
       // 🔐 Login
       document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -287,12 +471,17 @@
 
         loading.classList.remove('hidden');
         try {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           loading.classList.add('hidden');
+          
           if (error) {
             showToast(`❌ ${error.message}`, 'error');
             return;
           }
+          
+          // Record login time
+          await recordLoginTime(data.user.id);
+          
           showToast('✅ Login successful!');
           setTimeout(() => window.location.href = 'dashboard.html', 1200);
         } catch (err) {
@@ -323,7 +512,7 @@
 
         loading.classList.remove('hidden');
         try {
-          const { error } = await supabase.auth.signUp({
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -332,10 +521,12 @@
             }
           });
           loading.classList.add('hidden');
+          
           if (error) {
             showToast(`❌ ${error.message}`, 'error');
             return;
           }
+          
           showToast('📧 Account created! Check your email to verify.');
           signupSection.classList.add('hidden');
           loginSection.classList.remove('hidden');
@@ -361,10 +552,12 @@
             redirectTo: 'https://emannuh254.github.io/jiji-ya-chogoria/reset.html'
           });
           loading.classList.add('hidden');
+          
           if (error) {
             showToast(`❌ ${error.message}`, 'error');
             return;
           }
+          
           showToast('📩 Password reset link sent! Check your email.');
           forgotSection.classList.add('hidden');
           loginSection.classList.remove('hidden');

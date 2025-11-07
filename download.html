@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download App</title>
+  <style>
+    :root {
+      --orange: #db6a00;
+      --bg-dark: #0d0d0d;
+      --bg-light: #f6f6f6;
+      --text-dark: #fefefe;
+      --text-light: #000000;
+      --accent-gradient: linear-gradient(135deg, #ff8c00, #ff5e00);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-dark);
+      transition: background 0.4s, color 0.4s;
+    }
+
+    body.light-mode {
+      background: var(--bg-light);
+      color: var(--text-light);
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      background: #000000;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    body.light-mode nav {
+      background: #e3e3e3;
+    }
+
+    nav a {
+      color: var(--orange);
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 0.5rem;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #c7760d;
+    }
+
+    .container {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    .app-card {
+      background: #000000;
+      border-radius: 15px;
+      padding: 2rem 1.5rem;
+      max-width: 400px;
+      margin: 2rem auto;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+      transition: background 0.4s;
+    }
+
+    body.light-mode .app-card {
+      background: #fff;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .app-card h1 {
+      color: var(--orange);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .app-card p {
+      opacity: 0.8;
+      line-height: 1.5;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background: var(--accent-gradient);
+      color: white;
+      padding: 0.9rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .download-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 140, 0, 0.5);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+
+    /* Toggle Button */
+    #darkLightToggleBtn {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      z-index: 9999;
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #darkLightToggleBtn:hover {
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 600px) {
+      .app-card {
+        margin: 1.5rem 1rem;
+        padding: 1.5rem;
+      }
+
+      nav a {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="dashboard.html">🏠 Home</a>
+    <a href="download.html">⬇️ Download</a>
+  </nav>
+
+  <div class="container">
+    <div class="app-card">
+      <h1>Download Our App</h1>
+      <p>Get the latest version of our application. It’s secure, lightweight, and optimized for all devices.</p>
+      <a class="download-btn" 
+         href="https://drive.google.com/uc?export=download&id=12uZM2sjL0GtH_59t243F5uQnYolm8qoE" 
+         target="_blank" 
+         rel="noopener noreferrer">
+         Download Now
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 YourApp. All rights reserved.
+  </footer>
+
+  <!-- 🌗 Dark/Light Toggle -->
+  <button id="darkLightToggleBtn" aria-label="Toggle dark or light mode">🌙</button>
+  <script>
+  (() => {
+    const btn = document.getElementById("darkLightToggleBtn");
+    const savedMode = localStorage.getItem("darkLightMode");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    let darkMode = savedMode ? savedMode === "dark" : prefersDark;
+
+    const applyMode = () => {
+      document.body.classList.toggle("light-mode", !darkMode);
+      btn.innerHTML = darkMode ? "☀️" : "🌙";
+      localStorage.setItem("darkLightMode", darkMode ? "dark" : "light");
+    };
+    applyMode();
+
+    btn.onclick = () => {
+      darkMode = !darkMode;
+      applyMode();
+    };
+  })();
+  </script>
+</body>
+</html>

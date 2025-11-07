@@ -286,6 +286,8 @@
       z-index: 1000;
       opacity: 0;
       transition: transform 0.3s, opacity 0.3s;
+      max-width: 80%;
+      text-align: center;
     }
 
     body.light-mode .toast {
@@ -317,6 +319,47 @@
 
     .download-btn.loading .spinner {
       display: inline-block;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      width: 100%;
+      max-width: 250px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 0%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .download-btn.loading ~ .progress-container {
+      display: block;
+    }
+
+    /* Download location info */
+    .download-info {
+      margin-top: 15px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .download-info.show {
+      opacity: 0.8;
+    }
+
+    .download-info i {
+      color: var(--orange);
+      margin-right: 5px;
     }
 
     @media (max-width: 600px) {
@@ -407,12 +450,21 @@
       </div>
       
       <a class="download-btn" id="downloadBtn" 
-         href="https://drive.google.com/uc?export=download&id=12uZM2sjL0GtH_59t243F5uQnYolm8qoE" 
+         href="https://lrezerxsbuekkhmpverr.supabase.co/storage/v1/object/public/JiJi%20ya%20Chogoria/Chogoria%20Market.apk" 
          target="_blank" 
          rel="noopener noreferrer">
          <i class="fas fa-download"></i> Download Now
          <div class="spinner"></div>
       </a>
+      
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      
+      <div class="download-info" id="downloadInfo">
+        <i class="fas fa-folder-open"></i>
+        <span id="downloadLocation">File saved to your device's Downloads folder</span>
+      </div>
       
       <div class="app-version">Version 1.0.0</div>
     </div>
@@ -456,20 +508,65 @@
     (() => {
       const downloadBtn = document.getElementById("downloadBtn");
       const toast = document.getElementById("toast");
+      const progressBar = document.getElementById("progressBar");
+      const downloadInfo = document.getElementById("downloadInfo");
+      const downloadLocation = document.getElementById("downloadLocation");
       
       downloadBtn.addEventListener("click", function(e) {
         // Add loading state
         this.classList.add("loading");
         
         // Show toast notification
+        toast.textContent = "Download started successfully!";
         toast.classList.add("show");
         
-        // Remove loading state after 3 seconds
-        setTimeout(() => {
-          this.classList.remove("loading");
-        }, 3000);
+        // Simulate download progress
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 5;
+          progressBar.style.width = progress + '%';
+          
+          if (progress >= 100) {
+            clearInterval(interval);
+            
+            // Remove loading state
+            this.classList.remove("loading");
+            
+            // Show completion toast
+            toast.textContent = "Download completed successfully!";
+            toast.classList.add("show");
+            
+            // Show download location
+            downloadInfo.classList.add("show");
+            
+            // Try to detect the actual download location
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+              navigator.storage.estimate().then(estimate => {
+                const deviceInfo = navigator.userAgent;
+                let location = "Downloads folder";
+                
+                if (deviceInfo.indexOf("Win") !== -1) {
+                  location = "C:\\Users\\[Your Username]\\Downloads";
+                } else if (deviceInfo.indexOf("Mac") !== -1) {
+                  location = "/Users/[Your Username]/Downloads";
+                } else if (deviceInfo.indexOf("Linux") !== -1) {
+                  location = "/home/[Your Username]/Downloads";
+                } else if (deviceInfo.indexOf("Android") !== -1) {
+                  location = "/storage/emulated/0/Download";
+                }
+                
+                downloadLocation.textContent = `File saved to: ${location}`;
+              });
+            }
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+              toast.classList.remove("show");
+            }, 3000);
+          }
+        }, 300);
         
-        // Hide toast after 3 seconds
+        // Hide initial toast after 3 seconds
         setTimeout(() => {
           toast.classList.remove("show");
         }, 3000);

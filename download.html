@@ -210,6 +210,7 @@
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       width: 100%;
       max-width: 250px;
+      cursor: pointer;
     }
 
     .download-btn i {
@@ -362,6 +363,18 @@
       margin-right: 5px;
     }
 
+    /* Error message */
+    .error-message {
+      color: #ff4d4d;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
     @media (max-width: 600px) {
       .app-card {
         margin: 1.5rem 1rem;
@@ -449,16 +462,17 @@
         </div>
       </div>
       
-      <a class="download-btn" id="downloadBtn" 
-         href="https://lrezerxsbuekkhmpverr.supabase.co/storage/v1/object/public/JiJi%20ya%20Chogoria/Chogoria%20Market.apk" 
-         target="_blank" 
-         rel="noopener noreferrer">
-         <i class="fas fa-download"></i> Download Now
-         <div class="spinner"></div>
-      </a>
+      <button class="download-btn" id="downloadBtn">
+        <i class="fas fa-download"></i> Download Now
+        <div class="spinner"></div>
+      </button>
       
       <div class="progress-container">
         <div class="progress-bar" id="progressBar"></div>
+      </div>
+      
+      <div class="error-message" id="errorMessage">
+        <i class="fas fa-exclamation-circle"></i> Download failed. Please try again.
       </div>
       
       <div class="download-info" id="downloadInfo">
@@ -511,14 +525,35 @@
       const progressBar = document.getElementById("progressBar");
       const downloadInfo = document.getElementById("downloadInfo");
       const downloadLocation = document.getElementById("downloadLocation");
+      const errorMessage = document.getElementById("errorMessage");
+      
+      // The APK file URL
+      const apkUrl = "https://lrezerxsbuekkhmpverr.supabase.co/storage/v1/object/public/JiJi%20ya%20Chogoria/Chogoria%20Market.apk";
       
       downloadBtn.addEventListener("click", function(e) {
+        // Reset UI
+        errorMessage.classList.remove("show");
+        downloadInfo.classList.remove("show");
+        progressBar.style.width = "0%";
+        
         // Add loading state
         this.classList.add("loading");
         
         // Show toast notification
         toast.textContent = "Download started successfully!";
         toast.classList.add("show");
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3000);
+        
+        // Create a hidden anchor element for download
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = apkUrl;
+        a.download = "Chogoria_Market.apk";
+        document.body.appendChild(a);
         
         // Simulate download progress
         let progress = 0;
@@ -532,6 +567,9 @@
             // Remove loading state
             this.classList.remove("loading");
             
+            // Trigger the download
+            a.click();
+            
             // Show completion toast
             toast.textContent = "Download completed successfully!";
             toast.classList.add("show");
@@ -540,36 +578,45 @@
             downloadInfo.classList.add("show");
             
             // Try to detect the actual download location
-            if ('storage' in navigator && 'estimate' in navigator.storage) {
-              navigator.storage.estimate().then(estimate => {
-                const deviceInfo = navigator.userAgent;
-                let location = "Downloads folder";
-                
-                if (deviceInfo.indexOf("Win") !== -1) {
-                  location = "C:\\Users\\[Your Username]\\Downloads";
-                } else if (deviceInfo.indexOf("Mac") !== -1) {
-                  location = "/Users/[Your Username]/Downloads";
-                } else if (deviceInfo.indexOf("Linux") !== -1) {
-                  location = "/home/[Your Username]/Downloads";
-                } else if (deviceInfo.indexOf("Android") !== -1) {
-                  location = "/storage/emulated/0/Download";
-                }
-                
-                downloadLocation.textContent = `File saved to: ${location}`;
-              });
+            const deviceInfo = navigator.userAgent;
+            let location = "Downloads folder";
+            
+            if (deviceInfo.indexOf("Win") !== -1) {
+              location = "C:\\Users\\[Your Username]\\Downloads";
+            } else if (deviceInfo.indexOf("Mac") !== -1) {
+              location = "/Users/[Your Username]/Downloads";
+            } else if (deviceInfo.indexOf("Linux") !== -1) {
+              location = "/home/[Your Username]/Downloads";
+            } else if (deviceInfo.indexOf("Android") !== -1) {
+              location = "/storage/emulated/0/Download";
             }
+            
+            downloadLocation.textContent = `File saved to: ${location}`;
             
             // Hide toast after 3 seconds
             setTimeout(() => {
               toast.classList.remove("show");
             }, 3000);
+            
+            // Clean up
+            setTimeout(() => {
+              document.body.removeChild(a);
+            }, 1000);
           }
         }, 300);
         
-        // Hide initial toast after 3 seconds
-        setTimeout(() => {
-          toast.classList.remove("show");
-        }, 3000);
+        // Handle download errors
+        a.onerror = () => {
+          clearInterval(interval);
+          this.classList.remove("loading");
+          errorMessage.classList.add("show");
+          toast.textContent = "Download failed. Please try again.";
+          toast.classList.add("show");
+          
+          setTimeout(() => {
+            toast.classList.remove("show");
+          }, 3000);
+        };
       });
     })();
 

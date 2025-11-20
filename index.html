@@ -125,11 +125,38 @@
         color: #fff;
         opacity: 0.95;
         box-shadow: var(--shadow);
-        animation: fadeInUp 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+        animation: fadeInUp 0.5s ease;
         z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 90%;
       }
       .toast.success { border-left: 5px solid var(--success); }
       .toast.error { border-left: 5px solid var(--error); }
+      .toast .message {
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
+      .toast .toast-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 0.5rem;
+      }
+      .toast button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        margin: 0;
+        min-width: auto;
+      }
+      .toast .close-btn {
+        background: transparent;
+        border: 1px solid var(--subtext);
+        color: var(--subtext);
+      }
+      .toast .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
 
       .loading-spinner {
         border: 4px solid #333;
@@ -143,7 +170,6 @@
 
       @keyframes spin { 0% {transform: rotate(0);} 100% {transform: rotate(360deg);} }
       @keyframes fadeInUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
-      @keyframes fadeOut { to {opacity: 0;} }
 
       footer {
         margin-top: 1.5rem;
@@ -266,30 +292,55 @@
         'https://lrezerxsbuekkhmpverr.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxyZXplcnhzYnVla2tobXB2ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTI3MjMsImV4cCI6MjA3MzkyODcyM30.96senppPRMHveFi2ouDPDqhh17XIwxsLvA4U0rvjU9g'
       );
-
       const loginSection = document.getElementById('login-section');
       const signupSection = document.getElementById('signup-section');
       const forgotSection = document.getElementById('forgot-section');
       const loading = document.getElementById('loading');
       const sessionCheck = document.getElementById('session-check');
-      
-      // Track if user has interacted with the form
+
       let userInteracted = false;
-      
-      // Track if auto-login is in progress
       let autoLoginInProgress = false;
 
-      function showToast(msg, type = 'success') {
-        // Remove existing toasts
-        document.querySelectorAll('.toast').forEach(toast => toast.remove());
+      function showToast(msg, type = 'success', buttons = null) {
+        document.querySelectorAll('.toast').forEach(t => t.remove());
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.textContent = msg;
+        
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message';
+        messageEl.textContent = msg;
+        toast.appendChild(messageEl);
+        
+        if (buttons && buttons.length > 0) {
+          const buttonContainer = document.createElement('div');
+          buttonContainer.className = 'toast-buttons';
+          
+          buttons.forEach(btn => {
+            const buttonEl = document.createElement('button');
+            buttonEl.textContent = btn.text;
+            buttonEl.className = btn.class || '';
+            buttonEl.onclick = btn.onClick;
+            buttonContainer.appendChild(buttonEl);
+          });
+          
+          toast.appendChild(buttonContainer);
+          
+          // Auto-remove after 15 seconds if not manually closed
+          setTimeout(() => {
+            if (document.body.contains(toast)) {
+              toast.style.animation = 'fadeOut 0.5s ease forwards';
+              setTimeout(() => toast.remove(), 500);
+            }
+          }, 15000);
+        } else {
+          // Auto-remove after 3 seconds
+          toast.style.animation = 'fadeInUp 0.5s ease, fadeOut 0.5s ease 2.5s forwards';
+          setTimeout(() => toast.remove(), 3000);
+        }
+        
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
       }
 
-      // Validate email format
       function isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       }
@@ -317,181 +368,129 @@
         loading.classList.add('hidden');
       });
 
-      // Track user interaction
-      document.querySelectorAll('input, button').forEach(element => {
-        element.addEventListener('focus', () => {
-          userInteracted = true;
-        });
-        element.addEventListener('click', () => {
-          userInteracted = true;
-        });
+      document.querySelectorAll('input, button').forEach(el => {
+        el.addEventListener('focus', () => userInteracted = true);
+        el.addEventListener('click', () => userInteracted = true);
       });
 
-      // Function to record login time in the database
-      async function recordLoginTime(userId) {
+      // Record login with device info
+      async function recordLogin(userId) {
         try {
-          // Get device fingerprint (simple version)
-          const deviceInfo = navigator.userAgent;
-          
-          // Record login time
-          const { error } = await supabase
-            .from('user_logins')
-            .insert({
-              user_id: userId,
-              login_time: new Date().toISOString(),
-              device_info: deviceInfo
-            });
-            
-          if (error) {
-            console.error('Error recording login time:', error);
-          }
+          const deviceInfo = navigator.userAgent; // can expand later to IP etc.
+          const { error } = await supabase.from('user_logins').insert({
+            user_id: userId,
+            login_time: new Date().toISOString(),
+            device_info: deviceInfo
+          });
+          if (error) console.error('Error recording login:', error);
         } catch (err) {
-          console.error('Error in recordLoginTime:', err);
+          console.error('recordLogin error:', err);
         }
       }
 
-      // Function to check if user logged in within the last week
-      async function checkRecentLogin(userId) {
+      // Check recent login from same device
+      async function checkRecentLoginWithDevice(userId) {
         try {
-          // Calculate date one week ago
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-          
-          // Query for recent logins
+
+          const deviceInfo = navigator.userAgent;
+
           const { data, error } = await supabase
             .from('user_logins')
-            .select('login_time')
+            .select('login_time, device_info')
             .eq('user_id', userId)
             .gte('login_time', oneWeekAgo.toISOString())
             .order('login_time', { ascending: false })
-            .limit(1);
-            
+            .limit(5); // fetch last 5 logins
+
           if (error) {
-            console.error('Error checking recent login:', error);
+            console.error('Error fetching recent logins:', error);
             return false;
           }
-          
-          // If we have at least one login within the last week
-          return data && data.length > 0;
+
+          // Check if any recent login is from the same device
+          return data.some(entry => entry.device_info === deviceInfo);
         } catch (err) {
-          console.error('Error in checkRecentLogin:', err);
+          console.error('checkRecentLoginWithDevice error:', err);
           return false;
         }
       }
 
-      // Function to update session check indicator
-      function updateSessionCheckIndicator(text, isSuccess = false) {
-        const indicator = document.getElementById('session-check');
-        const span = indicator.querySelector('span');
+      function updateSessionIndicator(text, success = false) {
+        const span = sessionCheck.querySelector('span');
         span.textContent = text;
-        
-        if (isSuccess) {
-          indicator.classList.add('success');
-        }
-        
-        // Hide after 2 seconds
+        if (success) sessionCheck.classList.add('success');
         setTimeout(() => {
-          indicator.style.opacity = '0';
-          setTimeout(() => {
-            indicator.style.display = 'none';
-          }, 300);
+          sessionCheck.style.opacity = '0';
+          setTimeout(() => (sessionCheck.style.display = 'none'), 300);
         }, 2000);
       }
 
-      // 🔐 Fast background auto-login check
+      // Auto-login on page load
       window.addEventListener('DOMContentLoaded', () => {
-        // Start session check immediately without blocking UI
         setTimeout(async () => {
           try {
-            // First check local session (fast)
             const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) {
-              throw error;
-            }
-            
+            if (error) throw error;
+
             if (session) {
-              // Update indicator
-              updateSessionCheckIndicator('Session found, verifying...', true);
-              
-              // Check if user logged in within the last week
-              const recentLogin = await checkRecentLogin(session.user.id);
-              
+              updateSessionIndicator('Session found, verifying...', true);
+              const recentLogin = await checkRecentLoginWithDevice(session.user.id);
+
               if (recentLogin) {
-                // User logged in recently - auto login
                 autoLoginInProgress = true;
-                updateSessionCheckIndicator('Welcome back! Redirecting...', true);
-                
-                // Only redirect if user hasn't interacted with form
+                updateSessionIndicator('Welcome back! Redirecting...', true);
                 if (!userInteracted) {
-                  setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                  }, 800);
+                  setTimeout(() => (window.location.href = 'dashboard.html'), 800);
                 } else {
-                  // User interacted, show toast but don't redirect immediately
-                  showToast('✅ You\'re logged in! Continue to dashboard.');
-                  // Add a button to redirect
-                  const redirectBtn = document.createElement('button');
-                  redirectBtn.textContent = 'Go to Dashboard';
-                  redirectBtn.style.marginTop = '1rem';
-                  redirectBtn.style.background = 'linear-gradient(135deg, var(--success), #45a049)';
-                  redirectBtn.onclick = () => window.location.href = 'dashboard.html';
-                  document.querySelector('.form-container').appendChild(redirectBtn);
+                  showToast('✅ You\'re logged in! Continue to dashboard.', 'success', [
+                    {
+                      text: 'Go to Dashboard',
+                      onClick: () => (window.location.href = 'dashboard.html')
+                    }
+                  ]);
                 }
               } else {
-                // User hasn't logged in recently - sign out
                 await supabase.auth.signOut();
-                updateSessionCheckIndicator('Session expired');
+                updateSessionIndicator('Session expired for this device');
               }
             } else {
-              // No session found
-              updateSessionCheckIndicator('No active session');
+              updateSessionIndicator('No active session');
             }
           } catch (err) {
-            console.error('Error checking session:', err);
-            updateSessionCheckIndicator('Session check failed');
+            console.error('Auto-login error:', err);
+            updateSessionIndicator('Session check failed');
           }
-        }, 100); // Small delay to ensure UI is rendered
+        }, 100);
       });
 
-      // 🔐 Login
-      document.getElementById('login-form').addEventListener('submit', async (e) => {
+      // Login form submit
+      document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value.trim();
 
-        if (!isValidEmail(email)) {
-          showToast('❌ Please enter a valid email address', 'error');
-          return;
-        }
-        if (!password) {
-          showToast('❌ Please enter a password', 'error');
-          return;
-        }
+        if (!isValidEmail(email)) return showToast('❌ Enter valid email', 'error');
+        if (!password) return showToast('❌ Enter password', 'error');
 
         loading.classList.remove('hidden');
         try {
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           loading.classList.add('hidden');
-          
-          if (error) {
-            showToast(`❌ ${error.message}`, 'error');
-            return;
-          }
-          
-          // Record login time
-          await recordLoginTime(data.user.id);
-          
-          showToast('✅ Login successful!');
-          setTimeout(() => window.location.href = 'dashboard.html', 1200);
+          if (error) return showToast(`❌ ${error.message}`, 'error');
+
+          await recordLogin(data.user.id);
+          showToast('✅ Login successful! Redirecting...', 'success');
+          setTimeout(() => (window.location.href = 'dashboard.html'), 1200);
         } catch (err) {
           loading.classList.add('hidden');
-          showToast('❌ An unexpected error occurred', 'error');
+          showToast('❌ Unexpected error', 'error');
         }
       });
 
       // 🆕 Signup
-      document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      document.getElementById('signup-form').addEventListener('submit', async e => {
         e.preventDefault();
         const name = document.getElementById('signup-name').value.trim();
         const email = document.getElementById('signup-email').value.trim();
@@ -527,7 +526,35 @@
             return;
           }
           
-          showToast('📧 Account created! Check your email to verify.');
+          // Show toast with verify email button
+          showToast('📧 Account created! Check your email to verify.', 'success', [
+            {
+              text: 'Verify Email',
+              class: '',
+              onClick: () => {
+                // Open email client based on email domain
+                if (email.toLowerCase().includes('@gmail.com')) {
+                  window.open('https://mail.google.com', '_blank');
+                } else if (email.toLowerCase().includes('@yahoo.com')) {
+                  window.open('https://mail.yahoo.com', '_blank');
+                } else if (email.toLowerCase().includes('@outlook.com') || email.toLowerCase().includes('@hotmail.com')) {
+                  window.open('https://outlook.live.com', '_blank');
+                } else {
+                  // For other email providers, open default mail client
+                  window.location.href = `mailto:${email}`;
+                }
+              }
+            },
+            {
+              text: 'Close',
+              class: 'close-btn',
+              onClick: () => {
+                document.querySelectorAll('.toast').forEach(t => t.remove());
+              }
+            }
+          ]);
+          
+          // Switch to login form
           signupSection.classList.add('hidden');
           loginSection.classList.remove('hidden');
         } catch (err) {
@@ -537,7 +564,7 @@
       });
 
       // 🔁 Forgot password
-      document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+      document.getElementById('forgot-form').addEventListener('submit', async e => {
         e.preventDefault();
         const email = document.getElementById('forgot-email').value.trim();
 
@@ -558,7 +585,35 @@
             return;
           }
           
-          showToast('📩 Password reset link sent! Check your email.');
+          // Show toast with check email button
+          showToast('📩 Password reset link sent! Check your email.', 'success', [
+            {
+              text: 'Check Email',
+              class: '',
+              onClick: () => {
+                // Open email client based on email domain
+                if (email.toLowerCase().includes('@gmail.com')) {
+                  window.open('https://mail.google.com', '_blank');
+                } else if (email.toLowerCase().includes('@yahoo.com')) {
+                  window.open('https://mail.yahoo.com', '_blank');
+                } else if (email.toLowerCase().includes('@outlook.com') || email.toLowerCase().includes('@hotmail.com')) {
+                  window.open('https://outlook.live.com', '_blank');
+                } else {
+                  // For other email providers, open default mail client
+                  window.location.href = `mailto:${email}`;
+                }
+              }
+            },
+            {
+              text: 'Close',
+              class: 'close-btn',
+              onClick: () => {
+                document.querySelectorAll('.toast').forEach(t => t.remove());
+              }
+            }
+          ]);
+          
+          // Switch back to login form
           forgotSection.classList.add('hidden');
           loginSection.classList.remove('hidden');
         } catch (err) {

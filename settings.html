@@ -22,28 +22,37 @@
     <link rel="apple-touch-icon" href="icon.png">
     
     <style>
-        /* ====== CSS Variables for theming ====== */
+        /* Merged dashboard + settings CSS variables (single source) */
         :root {
-            --primary-color: #ff6600;
+            --bg-primary: #000000;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --bg-card: #0d0d0d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #808080;
+            --accent-primary: #ff6b35;
+            --accent-secondary: #ff8c42;
+            --accent-gradient: linear-gradient(135deg, #ff6b35, #ff8c42);
+            /* Backwards-compatible names used in this file */
+            --primary-color: var(--accent-primary);
             --primary-dark: #e55a00;
             --primary-light: #ff8533;
             --secondary-color: #25d366;
             --danger-color: #ff3333;
             --warning-color: #ffaa00;
-            --bg-primary: #000000;
-            --bg-secondary: #111111;
-            --bg-tertiary: #1a1a1a;
-            --text-primary: #ffffff;
-            --text-secondary: #aaaaaa;
-            --text-tertiary: #888888;
-            --border-color: #333333;
-            --shadow: rgba(0, 0, 0, 0.5);
-            --transition: all 0.3s ease;
-            --border-radius: 15px;
-            --button-radius: 30px;
-            --input-radius: 10px;
-            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            --hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            --border-color: #2a2a2a;
+            --shadow: rgba(0, 0, 0, 0.9);
+            --transition: all 0.25s ease;
+            --border-radius: 12px;
+            --button-radius: 20px;
+            --input-radius: 8px;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --hover-shadow: 0 4px 15px rgba(255, 107, 53, 0.15);
+            --sidebar-width: 350px;
+            --header-height: 60px;
+            --vh: 1vh;
+            --font-size-base: 13px;
         }
 
         /* ====== RESET & BASE ====== */
@@ -908,15 +917,15 @@
         <div class="container">
             <nav class="navbar">
                 <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
                 <ul class="nav-links">
-                    <li><a href="dashboard.html" class="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
-                    <li><a href="chat.html" class="chat"><i class="fas fa-comments"></i> Chat</a></li>
-                    <li><a href="post-product.html" class="post product"><i class="fas fa-plus-circle"></i> Post Product</a></li>
-                    <li><a href="settings.html" class="settings active"><i class="fas fa-cog"></i> Settings</a></li>
-                    <li><a href="#" class="logout" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="dashboard.html" class="dashboard">Dashboard</a></li>
+                    <li><a href="chat.html" class="chat">Chat</a></li>
+                    <li><a href="post-product.html" class="product">Post Product</a></li>
+                    <li><a href="settings.html" class="settings active">Settings</a></li>
+                    <li><a href="#" id="logout-btn" class="logout">Logout</a></li>
                 </ul>
-                <a href="post-product.html" class="post-product-btn"><i class="fas fa-plus-circle"></i> Post Product</a>
-                <button class="mobile-menu-toggle" id="mobile-menu-toggle"><i class="fas fa-bars"></i></button>
+                <a href="post-product.html" class="post-product-btn">Post Product</a>
             </nav>
         </div>
     </header>

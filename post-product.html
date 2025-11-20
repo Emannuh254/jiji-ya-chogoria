@@ -924,15 +924,15 @@
         <div class="container">
             <nav class="navbar">
                 <a href="dashboard.html" class="logo">Jiji ya Chogoria</a>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
                 <ul class="nav-links">
                     <li><a href="dashboard.html" class="dashboard">Dashboard</a></li>
-                    <li><a href="chat.html" class="chat">Chat</a></li>
-                    <li><a href="post-product.html" class="post product active">Post Product</a></li>
+                    <li><a href="chat/chat.html" class="chat">Chat</a></li>
+                    <li><a href="post-product.html" class="product active">Post Product</a></li>
                     <li><a href="settings.html" class="settings">Settings</a></li>
-                    <li><a href="#" class="logout" id="logout-btn">Logout</a></li>
+                    <li><a href="#" id="logout-btn" class="logout">Logout</a></li>
                 </ul>
                 <a href="post-product.html" class="post-product-btn active">Post Product</a>
-                <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
             </nav>
         </div>
     </header>
@@ -1046,7 +1046,7 @@
         });
     });
 
-    // Enhanced toast notification function with auto-dismiss
+    // Enhanced toast notification  function with auto-dismiss
     function showToast(message, type = 'success', duration = 3000) {
         // Remove existing toasts of the same type to prevent stacking
         document.querySelectorAll(`.toast.${type}`).forEach(toast => toast.remove());
@@ -1065,7 +1065,7 @@
             toast.innerHTML = `<span>ℹ️</span> <span>${message}</span>`;
         } else if (type === 'posting') {
             toast.innerHTML = `<span>📤</span> <span>${message}</span>`;
-        } else {
+        } else { 
             toast.textContent = message;
         }
         
